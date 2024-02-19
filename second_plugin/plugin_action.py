@@ -1,6 +1,6 @@
 import pcbnew
 from .point_graphing import point_grapher as pg
-# from .pcb_file_management import PcbFileDialog 
+from .pcb_file_management import OpenFileDialog
 from .pcb_components import PcbTrackList , PcbPadList, PcbBoard
 
 # REMOVE
@@ -17,9 +17,13 @@ class ComplexPluginAction(pcbnew.ActionPlugin):
 
     def Run(self):
         # The entry function of the plugin that is executed on user action
-        # new_board_ref = pcbnew.GetBoard()
+        
         # new_board_ref = pcbnew.LoadBoard(r"D:\KiCad\PCBS\test2\test2.kicad_pcb")
-        new_board_ref = pcbnew.LoadBoard(r"D:\KiCad\PCBS\renewablePCB\KiCAD_designs\bristleBot_V2\bristleBot_V2.kicad_pcb")
+
+        old_file_name = OpenFileDialog()
+
+        new_board_ref = pcbnew.GetBoard()
+        # new_board_ref = pcbnew.LoadBoard(r"D:\KiCad\PCBS\renewablePCB\KiCAD_designs\bristleBot_V2\bristleBot_V2.kicad_pcb")
 
         # pfd = PcbFileDialog()
              
@@ -27,7 +31,9 @@ class ComplexPluginAction(pcbnew.ActionPlugin):
         
         # board2 = pcbnew.LoadBoard(path)
         # board2 = board1
-        old_board_ref = pcbnew.LoadBoard(r"D:\KiCad\PCBS\renewablePCB\KiCAD_designs\bristleBot\bristleBot.kicad_pcb")
+
+        old_board_ref = pcbnew.LoadBoard(old_file_name)
+        # old_board_ref = pcbnew.LoadBoard(r"D:\KiCad\PCBS\renewablePCB\KiCAD_designs\bristleBot\bristleBot.kicad_pcb")
         # old_board_ref = pcbnew.LoadBoard(r"D:\KiCad\PCBS\test1\test1.kicad_pcb")
         
         # print(f"board ref {pcbnew.GetBoard()}")

@@ -6,6 +6,28 @@ import pathlib
 
 # TODO: create a parent class calles PcbComponents, and place the common fucntions in it
 
+ERASE_F_CU_LAYER = pcbnew.User_1
+ERASE_B_CU_LAYER = pcbnew.User_2
+ERASE_HOLE_LAYER = pcbnew.User_3
+
+WRITE_F_CU_LAYER = pcbnew.User_4
+WRITE_B_CU_LAYER = pcbnew.User_5
+WRITE_HOLE_LAYER = pcbnew.User_6
+
+layer_dict = {
+    "erase": {
+        "front": ERASE_F_CU_LAYER,
+        "back" : ERASE_B_CU_LAYER,
+        "hole" : ERASE_HOLE_LAYER,
+    },
+
+    "write": {
+        "front": WRITE_F_CU_LAYER,
+        "back" : WRITE_B_CU_LAYER,
+        "hole" : WRITE_HOLE_LAYER,
+    }
+}
+
 class PcbTrack():    
     def __init__(self, start, end, width, direction, layer, net_name):
 
@@ -141,18 +163,27 @@ class PcbPad():
             hole_outline.Append(p)
 
         self.hole_shape = pcbnew.SHAPE_POLY_SET()
-
         self.hole_shape.AddOutline(hole_outline)
 
         # self.polygon = self.hole_shape
         self.polygon.AddHole(hole_outline)
 
-
-
     def as_drawing(self, board, layer):
         drawing = pcbnew.PCB_SHAPE(board)
         drawing.SetShape(pcbnew.S_POLYGON)
         drawing.SetPolyShape(self.polygon)
+
+        drawing.SetFilled(True)
+        drawing.SetWidth(0)
+
+        drawing.SetLayer(layer)
+
+        return drawing
+    
+    def get_hole_drawing(self, board, layer):
+        drawing = pcbnew.PCB_SHAPE(board)
+        drawing.SetShape(pcbnew.S_POLYGON)
+        drawing.SetPolyShape(self.hole_shape)
 
         drawing.SetFilled(True)
         drawing.SetWidth(0)
@@ -588,12 +619,18 @@ class PcbNet():
         elif type(component) == PcbTrack:
             self.track_lst.append(component)
 
-    def plot(self, board, layer):
+    def plot(self, board, layers):
         for track in self.track_lst:
+            layer = layers["front" if track.layer == "F.Cu" else "back"]
             board.Add(track.as_drawing(board, layer))
 
         for pad in self.pad_lst:
-            board.Add(pad.as_drawing(board,layer))
+            layer = layers["front" if pad.layer == "F.Cu" else "back"]
+            board.Add(pad.as_drawing(board, layer))
+            
+            if pad.hole_shape:
+                board.Add(pad.get_hole_drawing(board, layers["hole"]))
+
 
     # Inefficient, Might be better to write a __hash__ and compare sets instead
     def __eq__(self, other):
@@ -602,6 +639,14 @@ class PcbNet():
         
         return all([track in other.track_lst for track in self.track_lst]) and \
                     all([pad in other.pad_lst for pad in self.pad_lst])  
+
+class PcbHole():
+    def __init__(self, hole_shape):
+        self.shape = hole_shape
+
+    def plot(self, board, layers):
+        self.shape.SetLayer(layers["hole"])
+        board.Add(self.shape)
 
 class PcbBoard():
     def __init__(self, board):
@@ -617,8 +662,11 @@ class PcbBoard():
         self.net_dict = dict()
         self.gnd_nets = []
 
+        self.holes = []
+
         self.add_to_dict(self.track_lst)
         self.add_to_dict(self.pad_lst)
+        self.add_holes()
 
         print(print(self.net_dict))
 
@@ -636,7 +684,27 @@ class PcbBoard():
                     self.net_dict[component.net_name] = PcbNet()
 
                 self.net_dict[component.net_name].add(component)
-            
+
+    def add_holes(self):      
+        # Getting all the shapes on the edge cuts layer
+        drawings = list(filter(lambda x: x.GetLayer() == pcbnew.Edge_Cuts, self.board.GetDrawings()))
+
+        # However this includes the outer edge of the board
+        # So let's remove the one that has the most area
+        max_area = 0
+        max_area_ind = 0
+
+        for ind, d in enumerate(drawings):
+            curr_area = d.GetBoundingBox().GetArea()
+            if curr_area > max_area:
+                max_area = curr_area
+                max_area_ind = ind
+
+        drawings.pop(max_area_ind)
+
+        self.holes = [PcbHole(d.Duplicate()) for d in drawings]
+
+
 
     # def compare_and_plot(self, old_board):
 
@@ -682,16 +750,37 @@ class PcbBoard():
 
         return erase_nets, write_nets
 
-    def plot_nets(self, net_list, board, layer):
+    def compare_holes(self, old_board):
+        erase_holes = []
+        write_holes = self.holes
+
+        for old_hole in old_board.holes:
+            is_in_new = False
+
+            for new_ind, new_hole in enumerate(write_holes):
+                if old_hole == new_hole:
+                    is_in_new = True
+                    write_holes.pop(new_ind)
+                    break
+                
+            if not is_in_new:
+                erase_holes.append(old_hole)
+
+        return erase_holes, write_holes
+
+    def plot_holes(self, hole_list, board, plot_mode):
+        for hole in hole_list:
+            hole.plot(board, layer_dict[plot_mode])
+
+    def plot_nets(self, net_list, board, plot_mode):
         for net in net_list:
-            net.plot(board, layer)
+            net.plot(board, layer_dict[plot_mode])
 
     def compare_and_plot(self, old_board):
         # self.plot_nets(list(self.net_dict.values())[1:2], self.board, pcbnew.User_3)
 
-        # name = OpenFileDialog()
-
         erase_nets, write_nets = self.compare_nets(old_board)
+        erase_holes, write_holes = self.compare_holes(old_board)
 
         parent_folder_path = pathlib.Path(self.board.GetFileName()).parent
         comp_folder_path = os.path.join(parent_folder_path, "compare_result")
@@ -708,8 +797,23 @@ class PcbBoard():
         # self.plot_nets(erase_nets, self.board, pcbnew.User_1)
         # self.plot_nets(write_nets, self.board, pcbnew.User_3)
 
-        self.plot_nets(erase_nets, plot_board, pcbnew.User_1)
-        self.plot_nets(write_nets, plot_board, pcbnew.User_3)
+        self.plot_nets(erase_nets, plot_board, "erase")
+        self.plot_nets(write_nets, plot_board, "write")
+
+        self.plot_holes(erase_holes, plot_board, "erase")
+        self.plot_holes(write_holes, plot_board, "write")
+        
+        # Not working?? TODO: FIX
+        # Setting unnecessary layers to hidden so I don't have to keep hiding them each time
+        vis_layers = [pcbnew.User_1, pcbnew.User_2, pcbnew.User_3, \
+                      pcbnew.User_4, pcbnew.User_5, pcbnew.User_6]
+
+        vis_lset = pcbnew.LSET()
+
+        for layer in vis_layers:
+            vis_lset.addLayer(layer)
+
+        plot_board.SetVisibleLayers(vis_lset)
 
         pcbnew.IO_MGR.Save(pcbnew.IO_MGR.KICAD_SEXP, plot_board_path, plot_board)
 

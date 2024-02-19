@@ -1,5 +1,5 @@
-# import wx
-from tkinter.filedialog import askopenfilename
+import wx
+# from tkinter.filedialog import askopenfilename
 
 # class PcbFileDialog():
 #     def __init__(self) -> None:
@@ -24,5 +24,18 @@ from tkinter.filedialog import askopenfilename
 #         return pathname
 
 def OpenFileDialog():
-    return askopenfilename()
+    app = wx.App
+    frm = wx.Frame()
+
+    ofd = wx.FileDialog(parent=frm, message="Select Old File", \
+                        wildcard = "KiCad PCB files (*.kicad_pcb)|*.kicad_pcb", style = wx.FD_OPEN | wx.FD_FILE_MUST_EXIST)
+    
+    if ofd.ShowModal() == wx.ID_CANCEL:
+        return
+    
+    pathname = ofd.GetPath()
+
+    ofd.Destroy()
+
+    return pathname
 
