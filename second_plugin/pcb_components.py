@@ -776,6 +776,27 @@ class PcbBoard():
         for net in net_list:
             net.plot(board, layer_dict[plot_mode])
 
+    def plot_gerbers(self, board, folder_path, layer_list = None):
+
+        if not layer_list:
+            layer_list = []
+            for mode in layer_dict.keys():
+                for side in layer_dict[mode].keys():
+                    layer_list.append((mode + "_" + side, layer_dict[mode][side]))
+
+        plot_ctrl = pcbnew.PLOT_CONTROLLER(board)
+        plot_options = plot_ctrl.GetPlotOptions()
+
+        plot_options.SetOutputDirectory(folder_path)
+
+        for title, layer in layer_list:
+            plot_ctrl.SetLayer(layer)
+            # TODO Figure out what to name them
+            plot_ctrl.OpenPlotfile(pcbnew.LayerName(layer), pcbnew.PLOT_FORMAT_GERBER, title)
+            plot_ctrl.PlotLayer()
+
+        plot_ctrl.ClosePlot()
+
     def compare_and_plot(self, old_board):
         # self.plot_nets(list(self.net_dict.values())[1:2], self.board, pcbnew.User_3)
 
@@ -814,6 +835,8 @@ class PcbBoard():
             vis_lset.addLayer(layer)
 
         plot_board.SetVisibleLayers(vis_lset)
+
+        self.plot_gerbers(plot_board, comp_folder_path)
 
         pcbnew.IO_MGR.Save(pcbnew.IO_MGR.KICAD_SEXP, plot_board_path, plot_board)
 

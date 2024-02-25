@@ -1,10 +1,10 @@
 import pcbnew
-from .point_graphing import point_grapher as pg
+# from .point_graphing import point_grapher as pg
 from .pcb_file_management import OpenFileDialog
 from .pcb_components import PcbTrackList , PcbPadList, PcbBoard
 
 # REMOVE
-import matplotlib.pyplot as plt
+# import matplotlib.pyplot as plt
 
 #TODO RENAME!!!
 class ComplexPluginAction(pcbnew.ActionPlugin):
@@ -31,6 +31,10 @@ class ComplexPluginAction(pcbnew.ActionPlugin):
         
         # board2 = pcbnew.LoadBoard(path)
         # board2 = board1
+
+        # If you cancel while choosing a file
+        if not old_file_name:
+            return
 
         old_board_ref = pcbnew.LoadBoard(old_file_name)
         # old_board_ref = pcbnew.LoadBoard(r"D:\KiCad\PCBS\renewablePCB\KiCAD_designs\bristleBot\bristleBot.kicad_pcb")
