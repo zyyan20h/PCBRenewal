@@ -14,22 +14,37 @@ WRITE_F_CU_LAYER = pcbnew.User_4
 WRITE_B_CU_LAYER = pcbnew.User_5
 WRITE_HOLE_LAYER = pcbnew.User_6
 
-layer_dict = {
-    "erase": {
-        "front": ERASE_F_CU_LAYER,
-        "back" : ERASE_B_CU_LAYER,
-        "hole" : ERASE_HOLE_LAYER,
-    },
+IU_PER_MM = pcbnew.PCB_IU_PER_MM
 
-    "write": {
-        "front": WRITE_F_CU_LAYER,
-        "back" : WRITE_B_CU_LAYER,
-        "hole" : WRITE_HOLE_LAYER,
-    }
-}
+HOLE_NAME = "Holes"
+
+CURRENT_BOARD_EXPORT_TITLE = "current board"
+
+# Getting all user layers
+printable_layers = list(range(pcbnew.User_1, pcbnew.User_1 + 9))
+
+# layer_dict = {
+#     "erase": {
+#         "front": ERASE_F_CU_LAYER,
+#         "back" : ERASE_B_CU_LAYER,
+#         "hole" : ERASE_HOLE_LAYER,
+#     },
+
+#     "write": {
+#         "front": WRITE_F_CU_LAYER,
+#         "back" : WRITE_B_CU_LAYER,
+#         "hole" : WRITE_HOLE_LAYER,
+#     }
+# }
+
+layer_dict = {"erase": dict(),
+              "write": dict()}
 
 class PcbTrack():    
-    def __init__(self, start, end, width, direction, layer, net_name):
+    def __init__(self, track):
+
+        start = track.GetStart()
+        end = track.GetEnd()
 
         # Making sure that all the tracks are aligned
         if start.EuclideanNorm() < end.EuclideanNorm():
@@ -49,22 +64,9 @@ class PcbTrack():
             self.end = start
 
 
-        self.width = width
-        self.net_name = net_name
-
-        # Scrapped below unit vector method because unit vector didn't seem to be what I expected it to be
-        # When testing in the python shell
-        """    
-        # Unit vector pointing in the direction of it
-        # Y component will always be positive as a convention
-        self.direction = direction 
-        """
-
-        self.direction = direction
-
-        # The layer it's on
-        # e.g. front or back
-        self.layer = layer
+        self.width = track.GetWidth()
+        self.net_name = track.GetNetname()
+        self.layer = track.GetLayerName()
     
     # Maybe instead of saying unit vector, just make __eq__ and see if cross product is 0
     def same_dir(self, __value: object) -> bool:
@@ -84,14 +86,7 @@ class PcbTrack():
 
         return drawing
 
-    def has_zero_length(self):
-        return self.start == self.end
-        #return False
-
     def __eq__(self, __value: object) -> bool:
-        # print(__value.__dict__) if __value else __value
-        # print(self.__dict__)
-        # return __value == None or \
         if not __value:
             return False
         
@@ -112,11 +107,11 @@ class PcbPad():
         # self.orientation = orientation
         self.net_name = pad.GetNetname()
         
-        self.hole_shape = None
+        self.hole = None
 
         if pad.HasHole():
             # Creating my own polygon for a hole shape because I have to
-            self.create_hole_shape(pad.GetEffectiveHoleShape(), pad.GetDrillShape())
+            self.hole = self.create_hole_shape(pad.GetEffectiveHoleShape(), pad.GetDrillShape())
 
     def get_arc_points(self, centre, radius, start_angle, end_angle, step= 5):
         point = pcbnew.VECTOR2I(centre[0] + radius, centre[1])
@@ -143,11 +138,14 @@ class PcbPad():
 
     def create_hole_shape(self, eff_hole_shape, shape_type):    
         point_lst = []
+        diameter = None
+        centre = None
 
         if shape_type == pcbnew.PAD_DRILL_SHAPE_CIRCLE:
             centre = eff_hole_shape.Centre()
 
-            radius = eff_hole_shape.GetWidth() // 2
+            diameter = eff_hole_shape.GetWidth()
+            radius = diameter // 2
 
             point_lst = self.get_arc_points(centre, radius, 0, 360)
 
@@ -162,11 +160,20 @@ class PcbPad():
         for p in point_lst:
             hole_outline.Append(p)
 
-        self.hole_shape = pcbnew.SHAPE_POLY_SET()
-        self.hole_shape.AddOutline(hole_outline)
+        hole_poly = pcbnew.SHAPE_POLY_SET()
+        hole_poly.AddOutline(hole_outline)
 
-        # self.polygon = self.hole_shape
-        self.polygon.AddHole(hole_outline)
+        hole_shape = pcbnew.PCB_SHAPE()
+        hole_shape.SetShape(pcbnew.S_POLYGON)
+        hole_shape.SetPolyShape(hole_poly)
+
+        hole_shape.SetFilled(True)
+        hole_shape.SetWidth(0)
+
+        # Following line adds a hole to the pad shape, but it messes things up when exporting
+        # self.polygon.AddHole(hole_outline)
+
+        return PcbHole(hole_shape, diameter)
 
     def as_drawing(self, board, layer):
         drawing = pcbnew.PCB_SHAPE(board)
@@ -219,394 +226,6 @@ class PcbPad():
         return True
         # return __value.position == self.position
         
-class PcbPadList():
-    def __init__(self):
-        self.front_pad_list = []
-        self.back_pad_list = []
-
-    def all(self):
-        return self.front_pad_list + self.back_pad_list
-
-    def add_to_list(self, board):
-        pad_lst = board.GetPads()
-
-        for pad in pad_lst:
-            new_pad = PcbPad(pad)
-
-            if new_pad.layer == "F.Cu":
-                self.front_pad_list.append(new_pad)
-            else:
-                self.back_pad_list.append(new_pad)
-
-    def compare_pads(self, old_pad_lst):
-        erase_pad_lst = PcbPadList()    
-
-        write_pad_lst = PcbPadList()
-        write_pad_lst.front_pad_list = self.front_pad_list
-        write_pad_lst.back_pad_list = self.back_pad_list
-
-        for old_ind, old_pad in enumerate(old_pad_lst.front_pad_list):
-            is_in_new = False
-
-            for new_ind, new_pad in enumerate(self.front_pad_list):
-                
-                # print(f"old {str(old_pad)}\nnew {str(new_pad)}\n {old_pad == new_pad}\n")
-                if old_pad == new_pad:
-                    is_in_new = True
-                    write_pad_lst.front_pad_list.pop(new_ind)
-                    break
-
-            if not is_in_new:
-                erase_pad_lst.front_pad_list.append(old_pad)
-
-        for old_ind, old_pad in enumerate(old_pad_lst.back_pad_list):
-            is_in_new = False
-
-            for new_ind, new_pad in enumerate(self.back_pad_list):
-
-                if old_pad == new_pad:
-                    is_in_new = True
-                    write_pad_lst.back_pad_list.pop(new_ind)
-                    break
-
-            if not is_in_new:
-                erase_pad_lst.back_pad_list.append(old_pad)
-                
-        return (erase_pad_lst, write_pad_lst)
-
-    def plot_in_kicad(self, board, front_layer, back_layer):
-        
-        def get_new_pad(pad, side):
-            new_pad = pcbnew.PCB_SHAPE(board)
-
-            new_pad.SetShape(pcbnew.S_POLYGON)
-            new_pad.SetPolyShape(pad.polygon)
-
-            # new_pad.SetPosition(pad.position)
-
-            # x_offset = int(pad.size[0] / 2)
-            # y_offset = int(pad.size[1] / 2)
-
-            # # start and end are the top left and bottom right corners of the rectangle
-            # # This method only works with plain old rectangles until I can figure out how to work with other shapes
-            # # When I tried getting the shape from a more rounded rectangular pad, it returned SH_SHAPE
-            # # And when I tried to set
-            # new_start = pcbnew.VECTOR2I(pad.position[0] - x_offset, pad.position[1] - y_offset)
-            # new_end = pcbnew.VECTOR2I(pad.position[0] + x_offset, pad.position[1] + y_offset)
-
-            # new_pad.SetStart(new_start)
-            # new_pad.SetEnd(new_end)
-
-            new_pad.SetFilled(True)
-            new_pad.SetWidth
-            # new_pad.Rotate(pad.position, pad.orientation)
-
-            new_pad.SetLayer(front_layer if side == "front" else back_layer)
-            
-
-            return new_pad
-
-        for pad in self.front_pad_list:
-            board.Add(get_new_pad(pad, "front"))
-
-        for pad in self.back_pad_list:
-            board.Add(get_new_pad(pad, "back"))    
-
-class PcbTrackList():    
-    def __init__(self):
-        self.front_track_list = []
-        self.back_track_list = []
-    
-    # Clears the front and back list
-    def clear_lists(self):
-        self.front_track_list = []
-        self.back_track_list = []
-
-    def all(self):
-        return self.front_track_list + self.back_track_list
-
-    # Takes in board object and adds PcbTrack objects to the list
-    def add_to_list(self, board):
-        conn_lst = board.GetTracks()
-
-        for conn in conn_lst:
-            if type(conn) == pcbnew.PCB_TRACK:
-                tr_st = conn.GetStart()
-                tr_en = conn.GetEnd()
-                tr_dr = (tr_st - tr_en) / (tr_st - tr_en).EuclideanNorm()
-                
-                tr_wd = conn.GetWidth()
-
-                # We want the Y component to be positive
-                # So I'm negating it if it's negative
-                tr_dr = -tr_dr if tr_dr[1] < 0 else tr_dr
-
-                tr_ly = conn.GetLayerName()
-
-                new_track = PcbTrack(tr_st, tr_en, tr_wd, tr_dr, tr_ly, conn.GetNetname())
-
-                if tr_ly == "F.Cu":
-                    self.front_track_list.append(new_track)
-                else:
-                    self.back_track_list.append(new_track)
-
-    fignum = 0
-
-    #(erase, keep, write)
-    # BIG PROBLEM, SOMETIMES A SINGLE LINE CAN BE 2 TRACKS, YOU NEED TO ACCOUNT FOR THAT
-    # AND ALSO IF THERE ARE MULTIPLE NEW TRACKS ON A SINGLE OLD TRACK
-    # POSSIBLE SOLUTION: RUN THE SAME OVERLAPPING ALGORITHM ON THE ERASE TRACKS AND KEEP TRACKS
-    # THATS DUMB
-    # Instead, update the old list with the subtracted tracks
-    @staticmethod
-    def overlaps(old_track, new_track):  
-
-        def area_of_triangle(p1, p2, p3):
-            return (p1.x * (p2.y - p3.y)) + (p2.x * (p3.y - p1.y)) + (p3.x * (p1.y - p2.y))
-
-        def is_on_track(point, track):
-            # TO DO: FIX THIS
-            # Maybe to simplify this, we could make the end x always be greater than start x
-            # by convention
-            # Might not even need the first 4 lines
-            return (track.start[0] <= point.x and point.x <= track.end[0] or \
-                    track.end[0] <= point.x and point.x <= track.start[0] ) and \
-                   (track.start[1] <= point.y and point.y <= track.end[1] or \
-                    track.end[1] <= point.y and point.y <= track.start[1]) and \
-                    area_of_triangle(point, track.start, track.end) == 0
-
-        # Track to be erased, Track to be kept, Track to be written
-        ret_tuple = (None, None, None)
-
-        new_start_on_old = is_on_track(new_track.start, old_track)
-        new_end_on_old = is_on_track(new_track.end, old_track)
-        old_start_on_new = is_on_track(old_track.start, new_track)
-        old_end_on_new = is_on_track(old_track.end, new_track)
-
-            
-
-        direction_vector = (new_track.start - new_track.end)
-
-        # If the new track is completely within the old one
-        if new_start_on_old and new_end_on_old:
-            # pg.set_fig_name(f"Tracks {PcbTrackList.fignum}")
-            # pg.plot_track(old_track.start, old_track.end, new_track.layer)
-            # pg.plot_track(new_track.end, new_track.start, new_track.layer)
-            # pg.show_plot()
-            PcbTrackList.fignum += 1
-            if direction_vector.Dot(new_track.start - old_track.end) > 0:
-                # OE------NE NE------NS NS------OS
-                
-                ret_tuple = ([PcbTrack(old_track.end, new_track.end, new_track.width, new_track.direction, new_track.layer), \
-                              PcbTrack(new_track.start, old_track.start,  new_track.width, new_track.direction, new_track.layer)], \
-                              new_track, \
-                              None)
-            else:
-                # OS------NE NE------NS NS------OE
-                
-                ret_tuple = ([PcbTrack(old_track.start, new_track.end, new_track.width, new_track.direction, new_track.layer), \
-                              PcbTrack(new_track.start, old_track.end, new_track.width, new_track.direction, new_track.layer)], \
-                              new_track, \
-                              None)
-                              
-                
-        # If the old track is completely withm the new one
-        elif old_start_on_new and old_end_on_new:
-
-            direction_vector = (old_track.start - old_track.end)
-            if direction_vector.Dot(old_track.start - new_track.end) > 0:
-                # NE------OE OE------OS OS------NS
-                ret_tuple = (None, \
-                             old_track, \
-                             [PcbTrack(new_track.end, old_track.end, new_track.width, direction_vector, new_track.layer), \
-                              PcbTrack(old_track.start, new_track.start, new_track.width, direction_vector, new_track.layer)])
-
-            else:
-                # NS------OE OE------OS OS------NE
-                ret_tuple = (None, \
-                             old_track, \
-                             [PcbTrack(new_track.start, old_track.end, new_track.width, direction_vector, new_track.layer), \
-                              PcbTrack(old_track.start, new_track.end, new_track.width, direction_vector, new_track.layer)])                
-
-
-
-        # Following code can probably be combined and generalised
-        
-        # If the start of the new track overlaps the old one
-        elif new_start_on_old:
-            # Track to be erased, Track to be kept, Track to be written
-        
-            if old_start_on_new:
-                # If the old track's start is on the new track
-                ret_tuple = (PcbTrack(new_track.start, old_track.end, new_track.width, direction_vector, new_track.layer), \
-                             PcbTrack(new_track.start, old_track.start, new_track.width, direction_vector, new_track.layer), \
-                             PcbTrack(old_track.start, new_track.end, new_track.width, direction_vector, new_track.layer) )
-            else:
-                # If the old track's end is on the new track
-                ret_tuple = (PcbTrack(new_track.start, old_track.start, new_track.width, direction_vector, new_track.layer), \
-                             PcbTrack(new_track.start, old_track.end, new_track.width, direction_vector, new_track.layer), \
-                             PcbTrack(old_track.end, new_track.end, new_track.width, direction_vector, new_track.layer) )
-        
-
-        #If the end of the new track overlaps the old one
-        elif new_end_on_old:
-            # Track to be erased, Track to be kept, Track to be written
-
-            if old_start_on_new:
-                # If the old track's start is on the new track
-                # OE------NE NE------OS OS------NS  
-                ret_tuple = (PcbTrack(old_track.end, new_track.end, new_track.width, direction_vector, new_track.layer), \
-                             PcbTrack(new_track.end, old_track.start, new_track.width, direction_vector, new_track.layer), \
-                             PcbTrack(old_track.start, new_track.start, new_track.width, direction_vector, new_track.layer) )
-            else:
-                # If the old track's end is on the new track
-                # OS------NE NE------OE OE------NS  
-                ret_tuple = (PcbTrack(old_track.start, new_track.end, new_track.width, direction_vector, new_track.layer), \
-                             PcbTrack(new_track.end, old_track.start, new_track.width, direction_vector, new_track.layer), \
-                             PcbTrack(old_track.end, new_track.start, new_track.width, direction_vector, new_track.layer) )
-        
-        return ret_tuple
-
-
-    @staticmethod
-    def track_subtract(old_lst, new_lst):
-        erase_lst = []
-        keep_lst = []
-        write_lst = []
-
-        old_overlap_lst = [False for i in range(len(old_lst))]
-        new_overlap_lst = [False for i in range(len(new_lst))]
-
-        for old_index, old_track in enumerate(old_lst):
-            for new_index, new_track in enumerate(new_lst):
-
-                if old_track.same_dir(new_track) :
-                    # TO DO: MAKE THIS BIT LESS UGLY
-
-                    
-
-                    tracks_tuple = PcbTrackList.overlaps(old_track= old_track, new_track= new_track)
-
-                    if tracks_tuple != (None, None, None):
-                        old_overlap_lst[old_index] = True
-                        new_overlap_lst[new_index] = True
-
-                    if tracks_tuple[0] != None:
-                        erase_lst = erase_lst + tracks_tuple[0] if type(tracks_tuple[0]) == list else erase_lst + [tracks_tuple[0]]
-
-                    if tracks_tuple[1] != None:
-                        keep_lst = keep_lst + tracks_tuple[1] if type(tracks_tuple[1]) == list else keep_lst + [tracks_tuple[1]]
-                    
-                    if tracks_tuple[2] != None:
-                        write_lst = write_lst + tracks_tuple[2] if type(tracks_tuple[2]) == list else write_lst + [tracks_tuple[2]]
-                
-        
-        for old_index, old_overlap in enumerate(old_overlap_lst):
-            if not old_overlap:
-                erase_lst.append(old_lst[old_index])
-
-        for new_index, new_overlap in enumerate(new_overlap_lst):
-            if not new_overlap:
-                write_lst.append(new_lst[new_index])
-                
-        
-
-        remove_bad_tracks = lambda a: not a.has_zero_length()
-
-        return (filter(remove_bad_tracks, erase_lst), filter(remove_bad_tracks, keep_lst), filter(remove_bad_tracks, write_lst))
-
-
-    # def compare_tracks(self, new_board_lst):
-    #     old_flist = self.front_track_list
-    #     old_blist = self.back_track_list
-
-    #     new_flist = new_board_lst.front_track_list
-    #     new_blist = new_board_lst.back_track_list
-
-    #     erase_pcb_lst = PcbTrackList()
-    #     keep_pcb_lst = PcbTrackList()
-    #     write_pcb_lst = PcbTrackList()
-
-    #     sub_tracks_tuple = PcbTrackList.track_subtract(old_lst=old_flist, new_lst=new_flist)
-
-    #     erase_pcb_lst.front_track_list = sub_tracks_tuple[0]
-    #     keep_pcb_lst.front_track_list = sub_tracks_tuple[1]
-    #     write_pcb_lst.front_track_list = sub_tracks_tuple[2]
-
-    #     sub_tracks_tuple = PcbTrackList.track_subtract(old_lst=old_blist, new_lst=new_blist)
-
-    #     erase_pcb_lst.back_track_list = sub_tracks_tuple[0]
-    #     keep_pcb_lst.back_track_list = sub_tracks_tuple[1]
-    #     write_pcb_lst.back_track_list = sub_tracks_tuple[2]
-
-    #     return (erase_pcb_lst, keep_pcb_lst, write_pcb_lst)
-
-    def compare_tracks(self, old_track_lst):
-
-        erase_track_lst = PcbTrackList()    
-
-        write_track_lst = PcbTrackList()
-        write_track_lst.front_track_list = self.front_track_list
-        write_track_lst.back_track_list = self.back_track_list
-
-        for old_ind, old_track in enumerate(old_track_lst.front_track_list):
-            is_in_new = False
-
-            for new_ind, new_track in enumerate(self.front_track_list):
-                
-                # print(f"old {str(old_track)}\nnew {str(new_track)}\n {old_track == new_track}\n")
-                if old_track == new_track:
-                    is_in_new = True
-                    write_track_lst.front_track_list.pop(new_ind)
-                    break
-
-            if not is_in_new:
-                erase_track_lst.front_track_list.append(old_track)
-
-        for old_ind, old_track in enumerate(old_track_lst.back_track_list):
-            is_in_new = False
-
-            for new_ind, new_track in enumerate(self.back_track_list):
-
-                if old_track == new_track:
-                    is_in_new = True
-                    write_track_lst.back_track_list.pop(new_ind)
-                    break
-
-            if not is_in_new:
-                erase_track_lst.back_track_list.append(old_track)
-                
-
-        return (erase_track_lst, write_track_lst)
-
-    def graph_lists(self, axes):
-        for track in self.front_track_list:
-            pg.plot_track(track.start, track.end, track.layer, axes= axes)
-
-        for track in self.back_track_list:
-            pg.plot_track(track.start, track.end, track.layer, axes= axes)
-
-        #pg.show_plot()
-            
-    def plot_in_kicad(self, board, front_layer, back_layer):
-        def get_new_wire(track, side):
-            new_wire = pcbnew.PCB_SHAPE(board)
-
-            new_wire.SetShape(pcbnew.SHAPE_T_SEGMENT)
-            new_wire.SetLayer(front_layer if side == "front" else back_layer)
-            new_wire.SetStart(track.start)
-            new_wire.SetEnd(track.end)
-            new_wire.SetWidth(track.width)
-
-            return new_wire
-
-
-        for track in self.front_track_list:
-            board.Add(get_new_wire(track, "front"))
-
-        for track in self.back_track_list:
-            board.Add(get_new_wire(track, "back"))
-
 class PcbNet():
     def __init__(self):
         self.track_lst = []
@@ -621,15 +240,16 @@ class PcbNet():
 
     def plot(self, board, layers):
         for track in self.track_lst:
-            layer = layers["front" if track.layer == "F.Cu" else "back"]
+            layer = layers[track.layer]
             board.Add(track.as_drawing(board, layer))
 
         for pad in self.pad_lst:
-            layer = layers["front" if pad.layer == "F.Cu" else "back"]
+            layer = layers[pad.layer]
             board.Add(pad.as_drawing(board, layer))
             
-            if pad.hole_shape:
-                board.Add(pad.get_hole_drawing(board, layers["hole"]))
+            if pad.hole:
+                # board.Add(pad.get_hole_drawing(board, layers["hole"]))
+                pad.hole.plot(board, layers)
 
 
     # Inefficient, Might be better to write a __hash__ and compare sets instead
@@ -641,23 +261,46 @@ class PcbNet():
                     all([pad in other.pad_lst for pad in self.pad_lst])  
 
 class PcbHole():
-    def __init__(self, hole_shape):
+    # For now, we'll only care about circular holes/
+    # Need to figure out how to differentiate between plated and not plated through holes
+    # Additionally, the value stored in 
+    def __init__(self, hole_shape, diameter = None, position = None):
         self.shape = hole_shape
+        self.diameter = diameter
+        self.position = position
+
+        if not diameter:
+            self.diameter = 2 * (self.shape.GetStart() - self.shape.GetEnd()).EuclideanNorm()
+
+        if not position:
+            self.position = self.shape.GetPosition()
 
     def plot(self, board, layers):
-        self.shape.SetLayer(layers["hole"])
+        hole_layer = layers[HOLE_NAME if HOLE_NAME in layers else board.GetLayerName(pcbnew.Edge_Cuts)]
+        self.shape.SetLayer(hole_layer)
         board.Add(self.shape)
 
+    def get_drill_code(self):
+        x = (self.position[0] / IU_PER_MM)
+        y = (self.position[1] / IU_PER_MM)
+
+        return f"X{x}Y{y}"
+
 class PcbBoard():
-    def __init__(self, board):
+    def __init__(self, board=None, path=None):
+        
+        if (not board) and (not path):
+            board = pcbnew.GetBoard()
+
+        elif not board:
+            board = pcbnew.LoadBoard(path)
+
         self.board = board
 
-        self.track_lst = PcbTrackList()
-        
-        self.track_lst.add_to_list(self.board)
+        track_lst = filter(lambda x: type(x) == pcbnew.PCB_TRACK, board.GetTracks())
+        self.track_lst = [PcbTrack(track) for track in track_lst]
 
-        self.pad_lst = PcbPadList()
-        self.pad_lst.add_to_list(self.board)
+        self.pad_lst = [PcbPad(pad) for pad in board.GetPads()]
 
         self.net_dict = dict()
         self.gnd_nets = []
@@ -668,22 +311,31 @@ class PcbBoard():
         self.add_to_dict(self.pad_lst)
         self.add_holes()
 
-        print(print(self.net_dict))
+    def get_layers(self):
+        # Gets all layers and converts them to their readable names
+        layer_list = [self.board.GetLayerName(layer) for layer in self.board.GetEnabledLayers().Seq()]
+
+        return layer_list
 
     def add_to_dict(self, comp_list):
-        for component in comp_list.all():
+        for component in comp_list:
+            net_name = component.net_name
+            layer = component.layer
 
-            if component.net_name == "GND":
+            if net_name == "GND":
                 new_net = PcbNet()
                 new_net.add(component)
 
                 self.gnd_nets.append(new_net)
 
             else:
-                if not (component.net_name in self.net_dict.keys()):
-                    self.net_dict[component.net_name] = PcbNet()
+                if not (layer in self.net_dict):
+                    self.net_dict[layer] = dict()
 
-                self.net_dict[component.net_name].add(component)
+                if not (net_name in self.net_dict[layer]):
+                    self.net_dict[layer][net_name] = PcbNet()
+
+                self.net_dict[layer][net_name].add(component)
 
     def add_holes(self):      
         # Getting all the shapes on the edge cuts layer
@@ -704,37 +356,31 @@ class PcbBoard():
 
         self.holes = [PcbHole(d.Duplicate()) for d in drawings]
 
+    def compare_nets(self, old_board, selected_layers = None):
 
-
-    # def compare_and_plot(self, old_board):
-
-    #     erase_track_lst, write_track_lst = \
-    #         self.track_lst.compare_tracks(old_board.track_lst)
-        
-    #     erase_pad_lst, write_pad_lst = \
-    #         self.pad_lst.compare_pads(old_board.pad_lst)
-        
-    #     ERASE_FRONT = pcbnew.User_1
-    #     ERASE_BACK =pcbnew.User_2
-
-    #     WRITE_FRONT = pcbnew.User_3
-    #     WRITE_BACK =pcbnew.User_4
-
-    #     print(f"erase t {erase_track_lst}")
-    #     print(f"erase p {erase_pad_lst}")
-
-    #     erase_track_lst.plot_in_kicad(self.board, ERASE_FRONT, ERASE_BACK)
-    #     erase_pad_lst.plot_in_kicad(self.board, ERASE_FRONT, ERASE_BACK)
-
-    #     write_track_lst.plot_in_kicad(self.board, WRITE_FRONT, WRITE_BACK)
-    #     write_pad_lst.plot_in_kicad(self.board, WRITE_FRONT, WRITE_BACK)
-
-    def compare_nets(self, old_board):
-
-        old_net_list = list(old_board.net_dict.values()) + old_board.gnd_nets
-
+        old_net_list = old_board.gnd_nets
+        write_nets = self.gnd_nets
         erase_nets = []
-        write_nets = list(self.net_dict.values()) + self.gnd_nets
+
+        if selected_layers:
+            for layer in selected_layers:
+                if layer in old_board.net_dict:
+                    old_net_list += list(old_board.net_dict[layer].values())
+
+                if layer in self.net_dict:
+                    write_nets += list(self.net_dict[layer].values())
+        else:
+            for layer in old_board.net_dict.keys():
+                    old_net_list += list(old_board.net_dict[layer].values())
+
+            for layer in self.net_dict.keys():
+                    write_nets += list(self.net_dict[layer].values())
+
+        
+        
+
+        # for layer in self.net_dict.keys():
+        #     old_net_list += list(self.net_dict[layer].values())
 
         for old_ind, old_net in enumerate(old_net_list):
             is_in_new = False
@@ -791,53 +437,112 @@ class PcbBoard():
 
         for title, layer in layer_list:
             plot_ctrl.SetLayer(layer)
-            # TODO Figure out what to name them
-            plot_ctrl.OpenPlotfile(pcbnew.LayerName(layer), pcbnew.PLOT_FORMAT_GERBER, title)
+            # TODO Figure out what to name them maybe pcbnew.LayerName(layer) somewhere?
+            plot_ctrl.OpenPlotfile(title, pcbnew.PLOT_FORMAT_GERBER, title)
             plot_ctrl.PlotLayer()
 
         plot_ctrl.ClosePlot()
+    
+    def plot_drill(self, board, file_path, hole_lst):
+        
+        with open(file_path, "w") as drill_file:
 
-    def compare_and_plot(self, old_board):
-        # self.plot_nets(list(self.net_dict.values())[1:2], self.board, pcbnew.User_3)
+            drill_file.write("M48\n")
+            drill_file.write("FMAT,2\n")
+            drill_file.write("METRIC\n")
 
-        erase_nets, write_nets = self.compare_nets(old_board)
-        erase_holes, write_holes = self.compare_holes(old_board)
+            # Write tool specifications here
+
+            drill_file.write("%") #end of header
+
+            # Choose tool
+
+            for hole in hole_lst:
+                drill_file.write(hole.get_drill_code() + "\n")
+
+            drill_file.write("M30") #end
+
+
+    def compare_and_plot(self, old_board, selected_layers= None):
+        erase_nets, write_nets = self.compare_nets(old_board, selected_layers)
+        
+        erase_holes, write_holes = None, None
+        plot_external_holes = False
+        if self.board.GetLayerName(pcbnew.Edge_Cuts) in selected_layers:
+            erase_holes, write_holes = self.compare_holes(old_board)
+            plot_external_holes = True
+        else:
+            selected_layers.append(HOLE_NAME)
+
+        self.export_file_names = dict()
+
+        user_layer_ind = 0
+        for mode in layer_dict.keys():
+            self.export_file_names[mode] = []
+
+            for layer in selected_layers:
+                layer_dict[mode][layer] = printable_layers[user_layer_ind]
+
+                # Storing the layer name, file name, and the layer id
+                self.export_file_names[mode].append((layer, mode + "_" + layer, printable_layers[user_layer_ind]))
+                user_layer_ind += 1
+
+            # # Adding a layer to plot pad holes if the edge cut layer isn't being compared
+            # if not plot_external_holes:
+            #     layer_dict[mode]["hole"] = printable_layers[user_layer_ind]
+            #     self.export_file_names[mode].append((mode + "_" + "hole", printable_layers[user_layer_ind]))
+            #     user_layer_ind += 1
+
+        # Then we add the whole copper layers and holes of the current board
+        cu_layers = self.board.GetEnabledLayers().CuStack()
+        self.export_file_names[CURRENT_BOARD_EXPORT_TITLE] = []
+
+        for layer_id in cu_layers:
+            layer_name = self.board.GetLayerName(layer_id)
+            self.export_file_names[CURRENT_BOARD_EXPORT_TITLE].append((layer_name, layer_name, layer_id))
+
+        # TODO This doesn't export the pad holes
+        self.export_file_names[CURRENT_BOARD_EXPORT_TITLE].append((HOLE_NAME, HOLE_NAME, pcbnew.Edge_Cuts))
 
         parent_folder_path = pathlib.Path(self.board.GetFileName()).parent
-        comp_folder_path = os.path.join(parent_folder_path, "compare_result")
+        self.comp_folder_path = os.path.join(parent_folder_path, "compare_result")
 
-        if not os.path.exists(comp_folder_path):
-            os.mkdir(comp_folder_path)
+        if not os.path.exists(self.comp_folder_path):
+            os.mkdir(self.comp_folder_path)
 
-        plot_board_path = os.path.join(comp_folder_path, "comparison.kicad_pcb")
+        plot_board_path = os.path.join(self.comp_folder_path, "comparison.kicad_pcb")
 
         pcbnew.IO_MGR.Save(pcbnew.IO_MGR.KICAD_SEXP, plot_board_path, self.board)
 
-        plot_board = pcbnew.IO_MGR.Load(pcbnew.IO_MGR.KICAD_SEXP, plot_board_path)
+        self.plot_board = pcbnew.IO_MGR.Load(pcbnew.IO_MGR.KICAD_SEXP, plot_board_path)
 
-        # self.plot_nets(erase_nets, self.board, pcbnew.User_1)
-        # self.plot_nets(write_nets, self.board, pcbnew.User_3)
+        self.plot_nets(erase_nets, self.plot_board, "erase")
+        self.plot_nets(write_nets, self.plot_board, "write")
 
-        self.plot_nets(erase_nets, plot_board, "erase")
-        self.plot_nets(write_nets, plot_board, "write")
-
-        self.plot_holes(erase_holes, plot_board, "erase")
-        self.plot_holes(write_holes, plot_board, "write")
+        if erase_holes:
+            self.plot_holes(erase_holes, self.plot_board, "erase")
+            self.plot_holes(write_holes, self.plot_board, "write")
         
-        # Not working?? TODO: FIX
-        # Setting unnecessary layers to hidden so I don't have to keep hiding them each time
-        vis_layers = [pcbnew.User_1, pcbnew.User_2, pcbnew.User_3, \
-                      pcbnew.User_4, pcbnew.User_5, pcbnew.User_6]
+        # # Not working?? TODO: FIX
+        # # Setting unnecessary layers to hidden so I don't have to keep hiding them each time
+        # # Probably won't work
+        # # Look into setting enabled layers instead of visible ones
+        # vis_layers = [pcbnew.User_1, pcbnew.User_2, pcbnew.User_3, \
+        #               pcbnew.User_4, pcbnew.User_5, pcbnew.User_6]
 
-        vis_lset = pcbnew.LSET()
+        # vis_lset = pcbnew.LSET()
 
-        for layer in vis_layers:
-            vis_lset.addLayer(layer)
+        # for layer in vis_layers:
+        #     vis_lset.addLayer(layer)
 
-        plot_board.SetVisibleLayers(vis_lset)
+        # self.plot_board.SetVisibleLayers(vis_lset)
 
-        self.plot_gerbers(plot_board, comp_folder_path)
+        pcbnew.IO_MGR.Save(pcbnew.IO_MGR.KICAD_SEXP, plot_board_path, self.plot_board)
 
-        pcbnew.IO_MGR.Save(pcbnew.IO_MGR.KICAD_SEXP, plot_board_path, plot_board)
+        # os.system(plot_board_path)
 
-        os.system(plot_board_path)
+        return self.export_file_names
+
+    def export_files(self, file_names):
+        self.plot_gerbers(self.plot_board, self.comp_folder_path, file_names)
+        pass
