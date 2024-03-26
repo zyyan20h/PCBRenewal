@@ -1,0 +1,7 @@
+(fp_lib_table
+  (version 7)
+  (lib (name "jst_ph")(type "KiCad")(uri "/Users/jiashengli/Documents/Research_Local/Rewable_pcb/kiCAD_lib/jst_ph/footprints.pretty")(options "")(descr ""))
+  (lib (name "buzzer")(type "KiCad")(uri "/Users/jiashengli/Documents/Research_Local/Rewable_pcb/kiCAD_lib/buzzer_3v_9x9mm/footprints.pretty")(options "")(descr ""))
+  (lib (name "attiny85")(type "KiCad")(uri "/Users/jiashengli/Documents/Research_Local/Rewable_pcb/kiCAD_lib/attiny85")(options "")(descr ""))
+  (lib (name "ambient_sensor")(type "KiCad")(uri "/Users/jiashengli/Documents/Research_Local/Rewable_pcb/kiCAD_lib/ambient_sensor")(options "")(descr ""))
+)
