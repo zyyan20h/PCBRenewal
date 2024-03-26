@@ -1,7 +1,0 @@
-(sym_lib_table
-  (version 7)
-  (lib (name "jst_ph")(type "KiCad")(uri "/Users/jiashengli/Documents/Research_Local/Rewable_pcb/kiCAD_lib/jst_ph/jst_ph.kicad_sym")(options "")(descr ""))
-  (lib (name "ATTINY85-20SUR")(type "KiCad")(uri "/Users/jiashengli/Documents/Research_Local/Rewable_pcb/kiCAD_lib/attiny85/ATTINY85-20SUR.kicad_sym")(options "")(descr ""))
-  (lib (name "ambient_sensor")(type "KiCad")(uri "/Users/jiashengli/Documents/Research_Local/Rewable_pcb/kiCAD_lib/ambient_sensor/ambient_sensor.kicad_sym")(options "")(descr ""))
-  (lib (name "buzzer_3v_9x9mm")(type "KiCad")(uri "/Users/jiashengli/Documents/Research_Local/Rewable_pcb/kiCAD_lib/buzzer_3v_9x9mm/buzzer_3v_9x9mm.kicad_sym")(options "")(descr ""))
-)
