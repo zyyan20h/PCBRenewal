@@ -1,0 +1,4 @@
+(sym_lib_table
+  (version 7)
+  (lib (name "thermal_cam_lib")(type "KiCad")(uri "${KIPRJMOD}/thermal_cam_lib.kicad_sym")(options "")(descr ""))
+)
