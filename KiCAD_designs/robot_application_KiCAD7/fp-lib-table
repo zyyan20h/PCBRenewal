@@ -1,7 +1,0 @@
-(fp_lib_table
-  (version 7)
-  (lib (name "ambient_sensor")(type "KiCad")(uri "${KIPRJMOD}/kiCAD_lib/ambient_sensor")(options "")(descr ""))
-  (lib (name "attiny85")(type "KiCad")(uri "${KIPRJMOD}/kiCAD_lib/attiny85")(options "")(descr ""))
-  (lib (name "buzzer_3v_9x9mm")(type "KiCad")(uri "${KIPRJMOD}/kiCAD_lib/buzzer_3v_9x9mm/footprints.pretty")(options "")(descr ""))
-  (lib (name "jst_ph")(type "KiCad")(uri "${KIPRJMOD}/kiCAD_lib/jst_ph/footprints.pretty")(options "")(descr ""))
-)
