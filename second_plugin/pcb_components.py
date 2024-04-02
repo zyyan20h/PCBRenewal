@@ -4,7 +4,7 @@ import math
 import os
 import pathlib
 
-# TODO: create a parent class calles PcbComponents, and place the common fucntions in it
+# TODO: create a parent class calles PcbComponents, and place the common functions in it
 
 ERASE_F_CU_LAYER = pcbnew.User_1
 ERASE_B_CU_LAYER = pcbnew.User_2
@@ -227,9 +227,11 @@ class PcbPad():
         # return __value.position == self.position
         
 class PcbNet():
-    def __init__(self):
+    def __init__(self, layer=None):
         self.track_lst = []
-        self.pad_lst = [] 
+        self.pad_lst = []
+        self.layer = layer
+
 
     def add(self, component):
         if type(component) == PcbPad:
@@ -240,13 +242,15 @@ class PcbNet():
 
     def plot(self, board, layers):
         for track in self.track_lst:
-            layer = layers[track.layer]
-            board.Add(track.as_drawing(board, layer))
+            if track.layer in layers:
+                layer = layers[track.layer]
+                board.Add(track.as_drawing(board, layer))
 
         for pad in self.pad_lst:
-            layer = layers[pad.layer]
-            board.Add(pad.as_drawing(board, layer))
-            
+            if pad.layer in layers:
+                layer = layers[pad.layer]
+                board.Add(pad.as_drawing(board, layer))
+                
             if pad.hole:
                 # board.Add(pad.get_hole_drawing(board, layers["hole"]))
                 pad.hole.plot(board, layers)
@@ -254,6 +258,9 @@ class PcbNet():
 
     # Inefficient, Might be better to write a __hash__ and compare sets instead
     def __eq__(self, other):
+        if self.layer != other.layer:
+            return False
+
         if (len(self.track_lst) != len(other.track_lst)) or (len(self.pad_lst) != len(other.pad_lst)):
             return False
         
@@ -307,6 +314,8 @@ class PcbBoard():
 
         self.holes = []
 
+        self.plot_board = None
+
         self.add_to_dict(self.track_lst)
         self.add_to_dict(self.pad_lst)
         self.add_holes()
@@ -323,7 +332,7 @@ class PcbBoard():
             layer = component.layer
 
             if net_name == "GND":
-                new_net = PcbNet()
+                new_net = PcbNet(layer)
                 new_net.add(component)
 
                 self.gnd_nets.append(new_net)
@@ -333,7 +342,7 @@ class PcbBoard():
                     self.net_dict[layer] = dict()
 
                 if not (net_name in self.net_dict[layer]):
-                    self.net_dict[layer][net_name] = PcbNet()
+                    self.net_dict[layer][net_name] = PcbNet(layer)
 
                 self.net_dict[layer][net_name].add(component)
 
@@ -498,7 +507,12 @@ class PcbBoard():
         self.export_file_names[CURRENT_BOARD_EXPORT_TITLE] = []
 
         for layer_id in cu_layers:
+            
+
             layer_name = self.board.GetLayerName(layer_id)
+
+            # # We don't want to export layers that the user doesn't want to compare.
+            # if layer_name in selected_layers:
             self.export_file_names[CURRENT_BOARD_EXPORT_TITLE].append((layer_name, layer_name, layer_id))
 
         # TODO This doesn't export the pad holes
@@ -523,25 +537,27 @@ class PcbBoard():
             self.plot_holes(erase_holes, self.plot_board, "erase")
             self.plot_holes(write_holes, self.plot_board, "write")
         
-        # # Not working?? TODO: FIX
-        # # Setting unnecessary layers to hidden so I don't have to keep hiding them each time
-        # # Probably won't work
-        # # Look into setting enabled layers instead of visible ones
-        # vis_layers = [pcbnew.User_1, pcbnew.User_2, pcbnew.User_3, \
-        #               pcbnew.User_4, pcbnew.User_5, pcbnew.User_6]
+        # Setting unnecessary layers to hidden so I don't have to keep hiding them each time
+        en_layers = []
+        for mode in layer_dict.keys():
+            en_layers += layer_dict[mode].values()
 
-        # vis_lset = pcbnew.LSET()
+        en_lset = pcbnew.LSET()
 
-        # for layer in vis_layers:
-        #     vis_lset.addLayer(layer)
+        for layer in en_layers:
+            en_lset.addLayer(layer)
 
-        # self.plot_board.SetVisibleLayers(vis_lset)
+        self.plot_board.SetEnabledLayers(en_lset)
 
         pcbnew.IO_MGR.Save(pcbnew.IO_MGR.KICAD_SEXP, plot_board_path, self.plot_board)
 
         # os.system(plot_board_path)
 
         return self.export_file_names
+
+    def open_plot_board(self):
+        if self.plot_board:
+            os.startfile(self.plot_board.GetFileName())
 
     def export_files(self, file_names):
         self.plot_gerbers(self.plot_board, self.comp_folder_path, file_names)

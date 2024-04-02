@@ -1,5 +1,6 @@
 import wx
 import wx.lib.scrolledpanel
+# import wx.svg
 from .comparison_dialog_ui import ComparisonOptionsDialog
 from .pcb_components import PcbBoard
 
@@ -136,7 +137,10 @@ class BoardComparisonWindow(ComparisonOptionsDialog):
                 new_text_ctrl = wx.TextCtrl(self.PanelExportFiles, wx.ID_ANY, file_name, wx.DefaultPosition, wx.DefaultSize, 0)
                 new_check_box = wx.CheckBox(self.PanelExportFiles, wx.ID_ANY, layer_name , wx.DefaultPosition, wx.DefaultSize, 0)
                 new_check_box.SetValue(True)
-                
+                # layer_image = wx.svg.SVGimage.CreateFromFile(r"D:\KiCad\PCBS\renewablePCB\KiCAD_designs\bristleBot_V2\compare_result\bristleBot-bruh.svg")
+                # layer_image.ConvertToBitmap()
+                # layer_image = wx.SVGFileDC(r"D:\KiCad\PCBS\renewablePCB\KiCAD_designs\bristleBot_V2\compare_result\bristleBot-bruh.svg")
+
                 layer_ind += 1
                 
                 self.export_data.append({"checkbox" : new_check_box, 
@@ -145,6 +149,7 @@ class BoardComparisonWindow(ComparisonOptionsDialog):
 
                 single_file_sizer.Add(new_check_box, 1, wx.ALL, 5)
                 single_file_sizer.Add(new_text_ctrl)
+                # single_file_sizer.Add(layer_image)
 
                 export_files_sizer.Add(single_file_sizer, 1, wx.ALL, 5)
 
@@ -171,5 +176,8 @@ class BoardComparisonWindow(ComparisonOptionsDialog):
 
     def OKClicked(self, event):
         # Making sure a file has been selected
-        if self.old_board_path != None:
-            self.EndModal(wx.ID_OK)
+        # if self.old_board_path != None:
+        #     self.EndModal(wx.ID_OK)
+        self.new_board.open_plot_board()
+        self.EndModal(wx.ID_OK)
+        pass
