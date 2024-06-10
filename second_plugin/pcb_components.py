@@ -4,6 +4,8 @@ import math
 import os
 import pathlib
 
+from .poly_comparison import ShapeCollection, as_svg
+
 # TODO: create a parent class calles PcbComponents, and place the common functions in it
 
 ERASE_F_CU_LAYER = pcbnew.User_1
@@ -19,6 +21,16 @@ IU_PER_MM = pcbnew.PCB_IU_PER_MM
 HOLE_NAME = "Holes"
 
 CURRENT_BOARD_EXPORT_TITLE = "current board"
+
+def rotate_point(p: pcbnew.VECTOR2I, angle: float, centre: pcbnew.VECTOR2I = pcbnew.VECTOR2I(0,0)):
+            centred_p = p - centre
+
+            angle_rad = math.radians(angle)
+
+            x = int((centred_p[0] * math.cos(angle_rad)) + (centred_p[1] * -math.sin(angle_rad)))
+            y = int((centred_p[0] * math.sin(angle_rad)) + (centred_p[1] * math.cos(angle_rad)))
+
+            return (pcbnew.VECTOR2I(x, y) + centre)
 
 # Getting all user layers
 printable_layers = list(range(pcbnew.User_1, pcbnew.User_1 + 9))
@@ -37,6 +49,7 @@ printable_layers = list(range(pcbnew.User_1, pcbnew.User_1 + 9))
 #     }
 # }
 
+# Stores layers to be exported to
 layer_dict = {"erase": dict(),
               "write": dict()}
 
@@ -97,7 +110,7 @@ class PcbTrack():
     
     def __str__(self):
         return f"start {self.start} end {self.end}"
-        
+
 class PcbPad():
     def __init__(self, pad):
         self.position = pad.GetPosition()
@@ -113,24 +126,16 @@ class PcbPad():
             # Creating my own polygon for a hole shape because I have to
             self.hole = self.create_hole_shape(pad.GetEffectiveHoleShape(), pad.GetDrillShape())
 
+    # This initial point assumes start_angle is 0
+    # Create a static function to generalize this
     def get_arc_points(self, centre, radius, start_angle, end_angle, step= 5):
         point = pcbnew.VECTOR2I(centre[0] + radius, centre[1])
         point_lst = []
 
         angle = start_angle
 
-        def rotate(p, centre, angle):
-            centred_p = p - centre
-
-            angle_rad = math.radians(angle)
-
-            x = int((centred_p[0] * math.cos(angle_rad)) + (centred_p[1] * -math.sin(angle_rad)))
-            y = int((centred_p[0] * math.sin(angle_rad)) + (centred_p[1] * math.cos(angle_rad)))
-
-            return (pcbnew.VECTOR2I(x, y) + centre)
-
         while angle < end_angle:
-            point_lst.append(rotate(point, centre, angle))
+            point_lst.append(rotate_point(point, angle, centre))
 
             angle += step
 
@@ -316,6 +321,8 @@ class PcbBoard():
 
         self.plot_board = None
 
+        self.path_dict = dict()
+
         self.add_to_dict(self.track_lst)
         self.add_to_dict(self.pad_lst)
         self.add_holes()
@@ -365,6 +372,13 @@ class PcbBoard():
 
         self.holes = [PcbHole(d.Duplicate()) for d in drawings]
 
+    def create_path_dict(self, selected_layers=None):
+        if not selected_layers:
+            selected_layers = self.net_dict.keys()
+        for layer in selected_layers:
+            if layer in self.net_dict:
+                self.path_dict[layer] = ShapeCollection(self.net_dict[layer])
+
     def compare_nets(self, old_board, selected_layers = None):
 
         old_net_list = old_board.gnd_nets
@@ -384,12 +398,6 @@ class PcbBoard():
 
             for layer in self.net_dict.keys():
                     write_nets += list(self.net_dict[layer].values())
-
-        
-        
-
-        # for layer in self.net_dict.keys():
-        #     old_net_list += list(self.net_dict[layer].values())
 
         for old_ind, old_net in enumerate(old_net_list):
             is_in_new = False
@@ -451,6 +459,28 @@ class PcbBoard():
             plot_ctrl.PlotLayer()
 
         plot_ctrl.ClosePlot()
+
+    # thsi is is an old function, it isn't the one used for path comparisons
+    def plot_svg(self, board, folder_path, layer_list = None):
+
+        if not layer_list:
+            layer_list = []
+            for mode in layer_dict.keys():
+                for side in layer_dict[mode].keys():
+                    layer_list.append((mode + "_" + side, layer_dict[mode][side]))
+
+        plot_ctrl = pcbnew.PLOT_CONTROLLER(board)
+        plot_options = plot_ctrl.GetPlotOptions()
+
+        plot_options.SetOutputDirectory(folder_path)
+
+        for title, layer in layer_list:
+            plot_ctrl.SetLayer(layer)
+            # TODO Figure out what to name them maybe pcbnew.LayerName(layer) somewhere?
+            plot_ctrl.OpenPlotfile(title, pcbnew.PLOT_FORMAT_SVG, title)
+            plot_ctrl.PlotLayer()
+
+        plot_ctrl.ClosePlot()
     
     def plot_drill(self, board, file_path, hole_lst):
         
@@ -471,8 +501,35 @@ class PcbBoard():
 
             drill_file.write("M30") #end
 
+    def compare_and_plot(self, old_board, selected_layers= None, compare_paths=False):
+        
+        # Assigning each erase and write layer to be exported to a user layer in the plot file
+        user_layer_ind = 0
+        for mode in layer_dict.keys():
+            self.export_file_names[mode] = []
+            layer_dict[mode] = dict()
 
-    def compare_and_plot(self, old_board, selected_layers= None):
+            for layer in selected_layers:
+                layer_dict[mode][layer] = printable_layers[user_layer_ind]
+
+                # Storing the layer name, file name, and the layer id
+                self.export_file_names[mode].append((layer, mode + "_" + layer, printable_layers[user_layer_ind]))
+                user_layer_ind += 1
+
+        if compare_paths:
+            #Initialising the paths, organised by layer
+            if self.path_dict == None:
+                self.create_path_dict()
+            if old_board.path_dict == None:
+                old_board.create_path_dict()
+            
+            # Create a generic compare method where you pass in two dicts organised by layer 
+            # and a function that compares two things and returnms an erase and a write
+
+            # For each layer, 
+
+            pass
+
         erase_nets, write_nets = self.compare_nets(old_board, selected_layers)
         
         erase_holes, write_holes = None, None
@@ -485,30 +542,11 @@ class PcbBoard():
 
         self.export_file_names = dict()
 
-        user_layer_ind = 0
-        for mode in layer_dict.keys():
-            self.export_file_names[mode] = []
-
-            for layer in selected_layers:
-                layer_dict[mode][layer] = printable_layers[user_layer_ind]
-
-                # Storing the layer name, file name, and the layer id
-                self.export_file_names[mode].append((layer, mode + "_" + layer, printable_layers[user_layer_ind]))
-                user_layer_ind += 1
-
-            # # Adding a layer to plot pad holes if the edge cut layer isn't being compared
-            # if not plot_external_holes:
-            #     layer_dict[mode]["hole"] = printable_layers[user_layer_ind]
-            #     self.export_file_names[mode].append((mode + "_" + "hole", printable_layers[user_layer_ind]))
-            #     user_layer_ind += 1
-
         # Then we add the whole copper layers and holes of the current board
         cu_layers = self.board.GetEnabledLayers().CuStack()
         self.export_file_names[CURRENT_BOARD_EXPORT_TITLE] = []
 
         for layer_id in cu_layers:
-            
-
             layer_name = self.board.GetLayerName(layer_id)
 
             # # We don't want to export layers that the user doesn't want to compare.
@@ -551,9 +589,32 @@ class PcbBoard():
 
         pcbnew.IO_MGR.Save(pcbnew.IO_MGR.KICAD_SEXP, plot_board_path, self.plot_board)
 
-        # os.system(plot_board_path)
+        
+        if compare_paths:
+            self.path_dict = {"erase path": dict(), "write path":dict()}
+
+            for layer in selected_layers:
+                self.path_dict["erase path"][layer] = []
+                self.path_dict["write path"][layer] = []
+
+            for net in erase_nets:
+                self.path_dict["erase path"][net.layer].append(net)
+            for net in write_nets:
+                self.path_dict["write path"][net.layer].append(net)
+            
+            erase_shapes = self.path_svg(erase_nets, "erase.svg")
+            write_shapes = self.path_svg(write_nets, "write.svg")
+
+            as_svg(erase_shapes.path_difference(write_shapes), os.path.join(self.comp_folder_path, "diff.svg"))
+            as_svg(erase_shapes.combined_net_paths, os.path.join(self.comp_folder_path, "comb.svg"), shape2=write_shapes.combined_net_paths)
 
         return self.export_file_names
+
+    def path_svg(self, net_list, name):
+        col = ShapeCollection(net_list=net_list)
+        as_svg(col.combined_net_paths, os.path.join(self.comp_folder_path, name))
+
+        return col
 
     def open_plot_board(self):
         if self.plot_board:
@@ -561,4 +622,5 @@ class PcbBoard():
 
     def export_files(self, file_names):
         self.plot_gerbers(self.plot_board, self.comp_folder_path, file_names)
+        # self.plot_svg(self.plot_board, self.comp_folder_path, file_names)
         pass

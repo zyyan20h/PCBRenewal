@@ -40,7 +40,7 @@ class ComparisonOptionsDialog ( wx.Dialog ):
 		bSizer7.Add( self.LabelOldFilePath, 9, wx.ALL|wx.ALIGN_CENTER_HORIZONTAL|wx.ALIGN_CENTER_VERTICAL, 5 )
 
 		self.ButtonOldFileUpload = wx.Button( self.PanelOldFileUpload, wx.ID_ANY, u"Select File", wx.DefaultPosition, wx.DefaultSize, 0 )
-		bSizer7.Add( self.ButtonOldFileUpload, 0, wx.ALL|wx.ALIGN_CENTER_HORIZONTAL, 5 )
+		bSizer7.Add( self.ButtonOldFileUpload, 0, wx.ALIGN_CENTER_VERTICAL|wx.ALL, 5 )
 
 
 		self.PanelOldFileUpload.SetSizer( bSizer7 )
@@ -64,10 +64,10 @@ class ComparisonOptionsDialog ( wx.Dialog ):
 		bSizer9.Add( self.LabelNewFilePath, 9, wx.ALL|wx.ALIGN_CENTER_HORIZONTAL|wx.ALIGN_CENTER_VERTICAL, 5 )
 
 		self.ButtonNewFileUpload = wx.Button( self.PanelNewFileUpload, wx.ID_ANY, u"Select File", wx.DefaultPosition, wx.DefaultSize, 0 )
-		bSizer9.Add( self.ButtonNewFileUpload, 0, wx.ALL|wx.ALIGN_CENTER_HORIZONTAL, 5 )
+		bSizer9.Add( self.ButtonNewFileUpload, 0, wx.ALL|wx.ALIGN_CENTER_HORIZONTAL|wx.ALIGN_CENTER_VERTICAL, 5 )
 
 		self.ButtonUseCurrBoard = wx.Button( self.PanelNewFileUpload, wx.ID_ANY, u"Use Current Board", wx.DefaultPosition, wx.DefaultSize, 0 )
-		bSizer9.Add( self.ButtonUseCurrBoard, 0, wx.ALL|wx.ALIGN_CENTER_HORIZONTAL, 5 )
+		bSizer9.Add( self.ButtonUseCurrBoard, 0, wx.ALIGN_CENTER_VERTICAL|wx.ALL, 5 )
 
 
 		self.PanelNewFileUpload.SetSizer( bSizer9 )
@@ -91,6 +91,9 @@ class ComparisonOptionsDialog ( wx.Dialog ):
 		self.listBoxCompLayers = wx.ListBox( self.PanelCompLayers, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, listBoxCompLayersChoices, wx.LB_MULTIPLE )
 		bSizer2.Add( self.listBoxCompLayers, 1, wx.ALL|wx.EXPAND, 5 )
 
+		self.checkBoxLineComp = wx.CheckBox( self.PanelCompLayers, wx.ID_ANY, u"Do Line Comparison", wx.DefaultPosition, wx.DefaultSize, wx.ALIGN_RIGHT )
+		bSizer2.Add( self.checkBoxLineComp, 0, wx.ALL|wx.ALIGN_RIGHT, 5 )
+
 		self.ButtonCompare = wx.Button( self.PanelCompLayers, wx.ID_ANY, u"Compare", wx.DefaultPosition, wx.DefaultSize, 0 )
 		bSizer2.Add( self.ButtonCompare, 0, wx.ALL|wx.ALIGN_RIGHT, 5 )
 
@@ -110,7 +113,7 @@ class ComparisonOptionsDialog ( wx.Dialog ):
 
 		self.PanelExportFiles = wx.ScrolledWindow( sbSizerExportFiles.GetStaticBox(), wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, wx.HSCROLL|wx.VSCROLL )
 		self.PanelExportFiles.SetScrollRate( 5, 5 )
-		sbSizerExportFiles.Add( self.PanelExportFiles, 1, wx.EXPAND |wx.ALL, 5 )
+		sbSizerExportFiles.Add( self.PanelExportFiles, 1, wx.ALL|wx.EXPAND, 5 )
 
 		self.ButtonExportFiles = wx.Button( sbSizerExportFiles.GetStaticBox(), wx.ID_ANY, u"Export", wx.DefaultPosition, wx.DefaultSize, 0 )
 		sbSizerExportFiles.Add( self.ButtonExportFiles, 0, wx.ALL|wx.ALIGN_RIGHT, 5 )
