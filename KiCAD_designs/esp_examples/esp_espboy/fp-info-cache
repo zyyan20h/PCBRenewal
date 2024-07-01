@@ -1,4 +1,4 @@
-23039264674946796
+23042704272039760
 Audio_Module
 Reverb_BTDR-1H
 Digital Reverberation Unit, http://www.belton.co.kr/inc/downfile.php?seq=17&file=pdf (footprint from http://www.uk-electronic.de/PDF/BTDR-1.pdf)
@@ -94416,6 +94416,13 @@ KMR223G LFG
 5
 5
 esp_lib
+MCP23017
+
+
+0
+28
+28
+esp_lib
 MX1508
 
 
@@ -94445,6 +94452,13 @@ SOT95P280X125-3N
 3
 esp_lib
 SOT229P700X180-4N
+
+
+0
+4
+4
+esp_lib
+switch
 
 
 0

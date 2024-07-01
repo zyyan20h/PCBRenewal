@@ -1079,9 +1079,6 @@
   (junction (at 113.03 114.3) (diameter 0) (color 0 0 0 0)
     (uuid e214131c-61e5-47fc-b32a-9b41bf8de925)
   )
-  (junction (at 55.88 58.42) (diameter 0) (color 0 0 0 0)
-    (uuid e5ce4b7c-7e14-45cf-bbf5-9175f77934a4)
-  )
   (junction (at 74.93 135.89) (diameter 0) (color 0 0 0 0)
     (uuid f2639b69-a680-4da4-bb69-4f6203edf125)
   )
@@ -1193,7 +1190,7 @@
     (stroke (width 0) (type default))
     (uuid 6d113368-a355-470b-a501-e25ca821ca77)
   )
-  (wire (pts (xy 55.88 58.42) (xy 71.12 58.42))
+  (wire (pts (xy 45.72 58.42) (xy 71.12 58.42))
     (stroke (width 0) (type default))
     (uuid 706d1b4b-c226-455f-ba56-03123cb55a88)
   )
@@ -1309,10 +1306,6 @@
     (stroke (width 0) (type default))
     (uuid abc303eb-1baf-4f26-8491-2b37c1555f66)
   )
-  (wire (pts (xy 55.88 50.8) (xy 74.93 50.8))
-    (stroke (width 0) (type default))
-    (uuid abe507d5-9fd7-4601-85aa-0aa71ae15420)
-  )
   (wire (pts (xy 71.12 55.88) (xy 74.93 55.88))
     (stroke (width 0) (type default))
     (uuid ae78da6e-ee84-42fc-a6a1-4e7d2b03ccde)
@@ -1344,10 +1337,6 @@
   (wire (pts (xy 200.025 25.4) (xy 206.375 25.4))
     (stroke (width 0) (type default))
     (uuid bf8c1844-2738-40ca-bad3-d68bd3554186)
-  )
-  (wire (pts (xy 45.72 58.42) (xy 55.88 58.42))
-    (stroke (width 0) (type default))
-    (uuid c1ed7825-d36c-4cc6-a64a-69968105f539)
   )
   (wire (pts (xy 242.57 41.91) (xy 248.92 41.91))
     (stroke (width 0) (type default))
@@ -1501,7 +1490,7 @@
     (pin "2" (uuid a2ea6eb8-f629-47db-95b1-1478ed300223))
     (pin "1" (uuid 35ecce85-5fef-4a29-b8b0-15cd813b9272))
     (instances
-      (project "esp_1st_iter_robot"
+      (project "esp_1st_iter_robot_mistake"
         (path "/23d6f766-c6b7-4667-9a65-4887bf263ea9"
           (reference "J5") (unit 1)
         )
@@ -1526,7 +1515,7 @@
     )
     (pin "1" (uuid c83eebf7-e302-41b1-b57a-57c2cdcdf979))
     (instances
-      (project "esp_1st_iter_robot"
+      (project "esp_1st_iter_robot_mistake"
         (path "/23d6f766-c6b7-4667-9a65-4887bf263ea9"
           (reference "#PWR09") (unit 1)
         )
@@ -1552,7 +1541,7 @@
     (pin "2" (uuid bc7d200e-a291-4b64-ad8a-1397f88e8fd4))
     (pin "1" (uuid 2d472894-36f7-450a-93a5-b9ff300e7919))
     (instances
-      (project "esp_1st_iter_robot"
+      (project "esp_1st_iter_robot_mistake"
         (path "/23d6f766-c6b7-4667-9a65-4887bf263ea9"
           (reference "J2") (unit 1)
         )
@@ -1577,7 +1566,7 @@
     )
     (pin "1" (uuid 804f85d9-592e-4f80-82ca-fbde10bce8c1))
     (instances
-      (project "esp_1st_iter_robot"
+      (project "esp_1st_iter_robot_mistake"
         (path "/23d6f766-c6b7-4667-9a65-4887bf263ea9"
           (reference "#PWR04") (unit 1)
         )
@@ -1647,7 +1636,7 @@
     (pin "16" (uuid ac946983-6554-41b5-9a2d-0885d632e63e))
     (pin "9" (uuid 75c018f2-3c28-4811-aa11-7210ba4bc30c))
     (instances
-      (project "esp_1st_iter_robot"
+      (project "esp_1st_iter_robot_mistake"
         (path "/23d6f766-c6b7-4667-9a65-4887bf263ea9"
           (reference "U1") (unit 1)
         )
@@ -1672,7 +1661,7 @@
     )
     (pin "1" (uuid 6be302ae-a41f-482a-a02e-4a24feb82523))
     (instances
-      (project "esp_1st_iter_robot"
+      (project "esp_1st_iter_robot_mistake"
         (path "/23d6f766-c6b7-4667-9a65-4887bf263ea9"
           (reference "#PWR07") (unit 1)
         )
@@ -1698,7 +1687,7 @@
     (pin "1" (uuid 02c8e493-8afd-408c-9f49-c1c0e868d7e5))
     (pin "2" (uuid d9850bac-db16-4d88-97a5-ae880ac9dfdd))
     (instances
-      (project "esp_1st_iter_robot"
+      (project "esp_1st_iter_robot_mistake"
         (path "/23d6f766-c6b7-4667-9a65-4887bf263ea9"
           (reference "J4") (unit 1)
         )
@@ -1723,7 +1712,7 @@
     )
     (pin "1" (uuid a1089de9-d7ef-462c-80cf-f38d9854d740))
     (instances
-      (project "esp_1st_iter_robot"
+      (project "esp_1st_iter_robot_mistake"
         (path "/23d6f766-c6b7-4667-9a65-4887bf263ea9"
           (reference "#PWR06") (unit 1)
         )
@@ -1774,7 +1763,7 @@
     (pin "2" (uuid 5483d67b-9d09-460c-bc91-74f4e10bdc8e))
     (pin "1" (uuid 9c803d81-dc36-4e13-8470-cfb6da332722))
     (instances
-      (project "esp_1st_iter_robot"
+      (project "esp_1st_iter_robot_mistake"
         (path "/23d6f766-c6b7-4667-9a65-4887bf263ea9"
           (reference "U2") (unit 1)
         )
@@ -1800,7 +1789,7 @@
     (pin "1" (uuid 071177bf-8106-4edd-8a06-0c9974b62853))
     (pin "2" (uuid f0dd3641-bcb4-41dd-bf93-b91be07d40e6))
     (instances
-      (project "esp_1st_iter_robot"
+      (project "esp_1st_iter_robot_mistake"
         (path "/23d6f766-c6b7-4667-9a65-4887bf263ea9"
           (reference "D1") (unit 1)
         )
@@ -1826,7 +1815,7 @@
     (pin "2" (uuid 124e48c5-39f6-4ac5-b5d7-34cbe096060b))
     (pin "1" (uuid 813c16ea-5a9c-4298-b16b-0888a572913b))
     (instances
-      (project "esp_1st_iter_robot"
+      (project "esp_1st_iter_robot_mistake"
         (path "/23d6f766-c6b7-4667-9a65-4887bf263ea9"
           (reference "R5") (unit 1)
         )
@@ -1852,7 +1841,7 @@
     (pin "1" (uuid 76428664-bc2e-4777-ae59-78612047472d))
     (pin "2" (uuid 0a6f8e60-4396-4fca-9c19-f663dc556234))
     (instances
-      (project "esp_1st_iter_robot"
+      (project "esp_1st_iter_robot_mistake"
         (path "/23d6f766-c6b7-4667-9a65-4887bf263ea9"
           (reference "U3") (unit 1)
         )
@@ -1878,7 +1867,7 @@
     (pin "1" (uuid 2429401b-da90-4365-a4d0-fbb3e9fe4257))
     (pin "2" (uuid 9f44c510-4342-4268-bf93-f4e537217cb3))
     (instances
-      (project "esp_1st_iter_robot"
+      (project "esp_1st_iter_robot_mistake"
         (path "/23d6f766-c6b7-4667-9a65-4887bf263ea9"
           (reference "R1") (unit 1)
         )
@@ -1904,7 +1893,7 @@
     (pin "1" (uuid 44e1df31-d92e-4466-ba8d-2fc918abbe91))
     (pin "2" (uuid e6582417-94d6-4009-88d9-31561b92bbef))
     (instances
-      (project "esp_1st_iter_robot"
+      (project "esp_1st_iter_robot_mistake"
         (path "/23d6f766-c6b7-4667-9a65-4887bf263ea9"
           (reference "SW2") (unit 1)
         )
@@ -1930,7 +1919,7 @@
     (pin "1" (uuid 4f317786-bf90-4155-ad8a-2dcd321d1f49))
     (pin "2" (uuid 63494808-5dac-40be-b505-766dfbe27a70))
     (instances
-      (project "esp_1st_iter_robot"
+      (project "esp_1st_iter_robot_mistake"
         (path "/23d6f766-c6b7-4667-9a65-4887bf263ea9"
           (reference "C2") (unit 1)
         )
@@ -1955,7 +1944,7 @@
     )
     (pin "1" (uuid d6378c67-778d-43d1-9377-9470d41acfd4))
     (instances
-      (project "esp_1st_iter_robot"
+      (project "esp_1st_iter_robot_mistake"
         (path "/23d6f766-c6b7-4667-9a65-4887bf263ea9"
           (reference "#PWR05") (unit 1)
         )
@@ -1981,7 +1970,7 @@
     (pin "2" (uuid 4d1c9ddc-8f5a-4025-8520-f16a9ccd6d30))
     (pin "1" (uuid 2fa16b28-8f4e-4113-bdf2-883c6fc82f4a))
     (instances
-      (project "esp_1st_iter_robot"
+      (project "esp_1st_iter_robot_mistake"
         (path "/23d6f766-c6b7-4667-9a65-4887bf263ea9"
           (reference "C1") (unit 1)
         )
@@ -2006,7 +1995,7 @@
     )
     (pin "1" (uuid b505456a-c6eb-42e7-86b5-9173283bbac6))
     (instances
-      (project "esp_1st_iter_robot"
+      (project "esp_1st_iter_robot_mistake"
         (path "/23d6f766-c6b7-4667-9a65-4887bf263ea9"
           (reference "#PWR014") (unit 1)
         )
@@ -2031,7 +2020,7 @@
     )
     (pin "1" (uuid 1f46f33f-1762-4dd1-b82e-775f5d48ec4f))
     (instances
-      (project "esp_1st_iter_robot"
+      (project "esp_1st_iter_robot_mistake"
         (path "/23d6f766-c6b7-4667-9a65-4887bf263ea9"
           (reference "#PWR015") (unit 1)
         )
@@ -2056,7 +2045,7 @@
     )
     (pin "1" (uuid dfcb6e59-14a1-447a-858f-0d3b0d96fa0a))
     (instances
-      (project "esp_1st_iter_robot"
+      (project "esp_1st_iter_robot_mistake"
         (path "/23d6f766-c6b7-4667-9a65-4887bf263ea9"
           (reference "#PWR01") (unit 1)
         )
@@ -2081,7 +2070,7 @@
     )
     (pin "1" (uuid be530493-5346-4d8e-a727-e7d97e85ab6e))
     (instances
-      (project "esp_1st_iter_robot"
+      (project "esp_1st_iter_robot_mistake"
         (path "/23d6f766-c6b7-4667-9a65-4887bf263ea9"
           (reference "#PWR010") (unit 1)
         )
@@ -2107,7 +2096,7 @@
     (pin "2" (uuid 41776c33-7cc6-45aa-be93-60f637c8a27b))
     (pin "1" (uuid c9790d2a-b4b3-4916-9c04-32e0f8e06c6e))
     (instances
-      (project "esp_1st_iter_robot"
+      (project "esp_1st_iter_robot_mistake"
         (path "/23d6f766-c6b7-4667-9a65-4887bf263ea9"
           (reference "R2") (unit 1)
         )
@@ -2132,7 +2121,7 @@
     )
     (pin "1" (uuid 59fe3802-d104-4af7-9da8-d87aa85487de))
     (instances
-      (project "esp_1st_iter_robot"
+      (project "esp_1st_iter_robot_mistake"
         (path "/23d6f766-c6b7-4667-9a65-4887bf263ea9"
           (reference "#PWR02") (unit 1)
         )
@@ -2157,7 +2146,7 @@
     )
     (pin "1" (uuid 643d2dd6-25d3-40a4-beca-44886ce5c7ad))
     (instances
-      (project "esp_1st_iter_robot"
+      (project "esp_1st_iter_robot_mistake"
         (path "/23d6f766-c6b7-4667-9a65-4887bf263ea9"
           (reference "#PWR03") (unit 1)
         )
@@ -2183,7 +2172,7 @@
     (pin "1" (uuid e6eabca4-aeb4-40f2-826e-0e5b9bb949c5))
     (pin "2" (uuid 9775701b-1e6b-4a68-a170-e85b2381414a))
     (instances
-      (project "esp_1st_iter_robot"
+      (project "esp_1st_iter_robot_mistake"
         (path "/23d6f766-c6b7-4667-9a65-4887bf263ea9"
           (reference "D2") (unit 1)
         )
@@ -2208,7 +2197,7 @@
     )
     (pin "1" (uuid d1db0187-fa5a-41c9-98bb-73315f5facc0))
     (instances
-      (project "esp_1st_iter_robot"
+      (project "esp_1st_iter_robot_mistake"
         (path "/23d6f766-c6b7-4667-9a65-4887bf263ea9"
           (reference "#PWR08") (unit 1)
         )
@@ -2234,35 +2223,9 @@
     (pin "1" (uuid 86dcfb58-4951-4f7f-b1e5-b463166690f6))
     (pin "2" (uuid 43ab527c-b991-4c31-85f8-8ec1de22d2de))
     (instances
-      (project "esp_1st_iter_robot"
+      (project "esp_1st_iter_robot_mistake"
         (path "/23d6f766-c6b7-4667-9a65-4887bf263ea9"
           (reference "J1") (unit 1)
-        )
-      )
-    )
-  )
-
-  (symbol (lib_id "Device:R") (at 55.88 54.61 0) (unit 1)
-    (in_bom yes) (on_board yes) (dnp no) (fields_autoplaced)
-    (uuid d4a8352c-1f18-4986-8a70-7f71d0d498e3)
-    (property "Reference" "R4" (at 58.42 53.34 0)
-      (effects (font (size 1.27 1.27)) (justify left))
-    )
-    (property "Value" "R" (at 58.42 55.88 0)
-      (effects (font (size 1.27 1.27)) (justify left))
-    )
-    (property "Footprint" "Resistor_SMD:R_0805_2012Metric" (at 54.102 54.61 90)
-      (effects (font (size 1.27 1.27)) hide)
-    )
-    (property "Datasheet" "~" (at 55.88 54.61 0)
-      (effects (font (size 1.27 1.27)) hide)
-    )
-    (pin "1" (uuid 740a7145-e5a8-4f39-a890-ddfe9a2c1f59))
-    (pin "2" (uuid 747c2ae0-c4e3-4f3e-bcf2-84554dd8c8bd))
-    (instances
-      (project "esp_1st_iter_robot"
-        (path "/23d6f766-c6b7-4667-9a65-4887bf263ea9"
-          (reference "R4") (unit 1)
         )
       )
     )
@@ -2286,7 +2249,7 @@
     (pin "2" (uuid 7e493ad0-b41b-4014-82d0-c2db47b57c69))
     (pin "1" (uuid 6bf29c7d-c98f-44eb-8b89-b7b3f9073281))
     (instances
-      (project "esp_1st_iter_robot"
+      (project "esp_1st_iter_robot_mistake"
         (path "/23d6f766-c6b7-4667-9a65-4887bf263ea9"
           (reference "C4") (unit 1)
         )
@@ -2311,7 +2274,7 @@
     )
     (pin "1" (uuid 99cdaa2b-c43a-4f9e-8950-6c3b5981ea92))
     (instances
-      (project "esp_1st_iter_robot"
+      (project "esp_1st_iter_robot_mistake"
         (path "/23d6f766-c6b7-4667-9a65-4887bf263ea9"
           (reference "#PWR013") (unit 1)
         )
@@ -2337,7 +2300,7 @@
     (pin "1" (uuid de348567-3308-4349-9827-c78cbe8c97af))
     (pin "2" (uuid 88f5813d-9bfb-4861-92f5-24dc0dc55e96))
     (instances
-      (project "esp_1st_iter_robot"
+      (project "esp_1st_iter_robot_mistake"
         (path "/23d6f766-c6b7-4667-9a65-4887bf263ea9"
           (reference "C3") (unit 1)
         )
@@ -2363,7 +2326,7 @@
     (pin "2" (uuid 7d51d404-02e7-4297-948e-814b6b16c4f0))
     (pin "1" (uuid 9a0adc8c-bd7c-47b1-8414-7bbf64065daf))
     (instances
-      (project "esp_1st_iter_robot"
+      (project "esp_1st_iter_robot_mistake"
         (path "/23d6f766-c6b7-4667-9a65-4887bf263ea9"
           (reference "J3") (unit 1)
         )
@@ -2446,7 +2409,7 @@
     (pin "7" (uuid 61e8edf4-14ea-4fc3-be00-55084d881298))
     (pin "9-UB" (uuid bc2a6261-02a7-4207-804d-8d22cd1b97f3))
     (instances
-      (project "esp_1st_iter_robot"
+      (project "esp_1st_iter_robot_mistake"
         (path "/23d6f766-c6b7-4667-9a65-4887bf263ea9"
           (reference "U4") (unit 1)
         )
@@ -2472,7 +2435,7 @@
     (pin "2" (uuid 6d755c79-687e-48b6-8303-81bcc6811c21))
     (pin "1" (uuid 892195e3-ede2-4211-822c-9800d61c6c8c))
     (instances
-      (project "esp_1st_iter_robot"
+      (project "esp_1st_iter_robot_mistake"
         (path "/23d6f766-c6b7-4667-9a65-4887bf263ea9"
           (reference "SW3") (unit 1)
         )
@@ -2498,7 +2461,7 @@
     (pin "1" (uuid 932670ca-33d5-483d-b1d5-a7372fc0785a))
     (pin "2" (uuid 23275fa4-d862-45fb-b326-eb62a1d1bbb9))
     (instances
-      (project "esp_1st_iter_robot"
+      (project "esp_1st_iter_robot_mistake"
         (path "/23d6f766-c6b7-4667-9a65-4887bf263ea9"
           (reference "R7") (unit 1)
         )
