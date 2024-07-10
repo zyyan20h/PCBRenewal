@@ -2,7 +2,7 @@ import wx
 import wx.lib.scrolledpanel
 # import wx.svg
 from .comparison_dialog_ui import ComparisonOptionsDialog
-from .pcb_components import PcbBoard
+from .pcb_components import PcbBoard, align_boards
 
 # TODO Maybe call layout locally instead of self.layout everywhere
 
@@ -14,6 +14,8 @@ class BoardComparisonWindow(ComparisonOptionsDialog):
         self.old_board_path = None
         self.old_board = None
         self.new_board = None
+        self.align_corner = "topleft"
+        self.comparison_method = "component"
         self.export_data = []
 
     def DialogInit(self, event):
@@ -40,8 +42,15 @@ class BoardComparisonWindow(ComparisonOptionsDialog):
         # self.CompareBoards("AAA)
 
         self.UseCurrentBoard(None)
+        self.log_sizer = wx.BoxSizer(wx.VERTICAL)
+        self.PanelLog.SetSizer(self.log_sizer)
 
         pass
+    
+    def AddToLog(self, log_text):
+        new_label = wx.StaticText(self.PanelLog, label=log_text)
+        self.log_sizer.Add(new_label)
+        self.PanelLog.Layout()
 
     def OpenFileDialog(self):
         ofd = wx.FileDialog(parent=None, message="Select Board File", \
@@ -61,23 +70,24 @@ class BoardComparisonWindow(ComparisonOptionsDialog):
         self.old_board_path = self.OpenFileDialog()
 
         if self.old_board_path:            
-            self.old_board = PcbBoard(board=None, path=self.old_board_path)
+            self.old_board = PcbBoard(path=self.old_board_path)
 
             self.LabelOldFilePath.SetLabelText(self.old_board_path)
             # self.LabelOldFilePath.Wrap(300)
             self.Layout()
-
+            self.AddToLog("Added old board file")
             self.UpdateCompLayers()
 
     def UploadNewFile(self, event):
         new_board_path = self.OpenFileDialog()
 
         if new_board_path:
-            self.new_board = PcbBoard(board=None, path=new_board_path)
+            self.new_board = PcbBoard(path=new_board_path)
 
             self.LabelNewFilePath.SetLabelText(new_board_path)
 
             self.Layout()
+            self.AddToLog("Added new board file")
 
     # Maybe use some way to make it not specific to the New Board
     def UseCurrentBoard(self, event):
@@ -110,6 +120,17 @@ class BoardComparisonWindow(ComparisonOptionsDialog):
 
         # self.PanelCompLayers.SetSizer(layer_sizer)
 
+    def ComparisonMethodChanged(self, event):
+        choices = ["component", "line", "hybrid"]
+        index = self.rbCompMethod.GetSelection()
+        self.comparison_method = choices[index]
+        
+
+    def AlignCornerChanged(self, event):
+        choices = ["topleft", "bottomleft", "topright", "bottomright"]
+        index = self.rbAlignCorner.GetSelection()
+        self.align_corner = choices[index]
+
     def CompareBoards(self, event):
         # First get the layers selected
         selected_layers = self.listBoxCompLayers.GetSelections()
@@ -119,21 +140,27 @@ class BoardComparisonWindow(ComparisonOptionsDialog):
 
         self.PanelExportFiles.DestroyChildren()
 
+        # Aligning the boards
+        align_boards(self.new_board, self.old_board, corner_name=self.align_corner)
+
         #Convert from indexes to layer names
         selected_layers = [self.all_layers[index] for index in selected_layers]
 
-        self.path_comp = self.checkBoxLineComp.IsChecked()
-
-        export_file_names = self.new_board.compare_and_plot(self.old_board, selected_layers, compare_paths=self.path_comp)
+        layer_pngs = self.new_board.compare_and_plot(self.old_board, selected_layers, compare_paths=self.comparison_method)
+        self.AddToLog("Boards compared")
+        if not layer_pngs:
+            return
+        
+        # self.AddToLog("Boards compared")
 
         export_modes_sizer = wx.BoxSizer(wx.VERTICAL)
 
-        for mode in export_file_names.keys():
+        for mode in layer_pngs.keys():
 
             export_files_sizer = wx.StaticBoxSizer( wx.StaticBox( self.PanelExportFiles, wx.ID_ANY, mode ), wx.VERTICAL )
 
             layer_ind = 0
-            for layer_name, file_name, layer_id in export_file_names[mode]:
+            for layer_name, file_name, layer_id in layer_pngs[mode]:
                 single_file_sizer = wx.BoxSizer(wx.HORIZONTAL)
 
                 new_text_ctrl = wx.TextCtrl(self.PanelExportFiles, wx.ID_ANY, file_name, wx.DefaultPosition, wx.DefaultSize, 0)
@@ -165,20 +192,21 @@ class BoardComparisonWindow(ComparisonOptionsDialog):
 
     def ExportFiles(self, event):
 
-        file_names = []
+        # file_names = []
 
-        # Getting the files that are checked to export
-        for layer in self.export_data:
-            if layer["checkbox"].IsChecked():
-                file_names.append((layer["textctrl"].GetValue(), layer["id"]))
+        # # Getting the files that are checked to export
+        # for layer in self.export_data:
+        #     if layer["checkbox"].IsChecked():
+        #         file_names.append((layer["textctrl"].GetValue(), layer["id"]))
 
-        self.new_board.export_files(file_names)
+        self.new_board.export_files()
+        self.AddToLog(f"Files exported to {self.new_board.comp_folder_path}")
         pass
 
     def OKClicked(self, event):
         # Making sure a file has been selected
         # if self.old_board_path != None:
         #     self.EndModal(wx.ID_OK)
-        self.new_board.open_plot_board()
+        self.new_board.open_disp_board()
         self.EndModal(wx.ID_OK)
         pass

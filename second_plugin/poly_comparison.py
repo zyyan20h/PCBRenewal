@@ -1,5 +1,5 @@
 # from svgpathtools import svg2paths, wsvg, Line, Path, parse_path
-from shapely import MultiPolygon, Polygon, union_all, buffer #  Go to Kicad Command prompt and type 'pip install shapely'
+from shapely import MultiPolygon, Polygon, Point, union_all, buffer #  Go to Kicad Command prompt and type 'pip install shapely'
 import pcbnew
 # from .pcb_components import PcbTrack, PcbPad, rotate_point
 import math
@@ -51,8 +51,8 @@ class ComponentShape:
 
     def get_pad_poly(self, component):
         line_chain = component.polygon.Outline(0)
-        point_lst = [ iu_to_mm(p) for p in line_chain.CPoints()]
-
+        # point_lst = [ iu_to_mm(p) for p in line_chain.CPoints()]
+        point_lst = [ p for p in line_chain.CPoints()]
         outline = Polygon(point_lst)
         return outline
 
@@ -70,13 +70,15 @@ class ComponentShape:
         curr_angle = 0
         step = 360 / total_points
         while curr_angle <= 180:
-            new_point = iu_to_mm(offset_vec + end)
+            # new_point = iu_to_mm(offset_vec + end)
+            new_point = offset_vec + end
             point_lst.append(new_point)
             offset_vec = rotate_point(offset_vec, step)
             curr_angle += step
 
         while curr_angle <= 360:
-            new_point = iu_to_mm(offset_vec + start)
+            # new_point = iu_to_mm(offset_vec + start)
+            new_point = offset_vec + start
             point_lst.append(new_point)
             offset_vec = rotate_point(offset_vec, step)
             curr_angle += step
@@ -85,7 +87,7 @@ class ComponentShape:
         return outline
 
 class NetShape:
-    def __init__(self, net, offset=0.2):
+    def __init__(self, net, offset=0.05):
         pad_shapes = [ComponentShape(pad, "pad").outline for pad in net.pad_lst]
         track_shapes = [ComponentShape(track, "track").outline for track in net.track_lst]
 
@@ -94,7 +96,7 @@ class NetShape:
         # self.offset_path = offset_shape.difference(self.outline)
         # a = int(1,2)
         # # Line tracing out the midle of the drill path
-        print(type(self.outline))
+        # print(type(self.outline))
         offset_path_shape = buffer(self.outline, offset/2)
         self.offset_path = None
         # Converting to a line instead of a polygon
@@ -106,22 +108,52 @@ class NetShape:
         self.offset = offset
 
 class ShapeCollection:
-    def __init__(self, net_list, offset=0.2):
+    def __init__(self, net_list=None, offset=0.05, shape_collection=None):
         self.combined_net_paths = None
+        self.offset = offset
         self.combined_outlines = None
 
-        net_shapes = [NetShape(net)for net in net_list]
-        path_lst = [shape.offset_path for shape in net_shapes]
-        outline_lst = [shape.outline for shape in net_shapes]
-        # # might be breaking because of somehting called pygeos and it not being the correct version
-        # self.combined_net_paths = coverage_union_all(path_lst) 
-        self.combined_net_paths = union_all(path_lst)
-        self.combined_outlines = union_all(outline_lst)
+        if shape_collection:
+            # For when you already have shapely objects and you just want to store them in this class
+            self.combined_net_paths = shape_collection
+
+        else:
+            net_shapes = [NetShape(net)for net in net_list]
+            path_lst = [shape.offset_path for shape in net_shapes]
+            outline_lst = [shape.outline for shape in net_shapes]
+            # # might be breaking because of somehting called pygeos and it not being the correct version
+            # self.combined_net_paths = coverage_union_all(path_lst) 
+            self.combined_net_paths = union_all(path_lst)
+            self.combined_outlines = union_all(outline_lst)
 
     def path_difference(self, other):
-        return self.combined_net_paths.difference(other.combined_net_paths)
+        diff = self.combined_net_paths.difference(other.combined_net_paths)
+        return ShapeCollection(shape_collection=diff)
     
     def plot_in_kicad(self, board, layer):
+        shape_list = self.combined_net_paths.geoms
+        line_width = int(self.offset * 2 * IU_PER_MM)
+        for shape in shape_list:
+            ind = 0
+            points = shape.coords
+            num_points = len(points)
+            
+            while ind < num_points - 1:
+                line = pcbnew.PCB_SHAPE(board)
+                line.SetShape(pcbnew.SHAPE_T_SEGMENT)
+                line.SetLayer(layer)
+
+                # Have to convert the coordinates to integers
+                start = pcbnew.VECTOR2I(int(points[ind][0]), int(points[ind][1]))
+                end = pcbnew.VECTOR2I(int(points[ind + 1][0]), int(points[ind + 1][1]))
+                line.SetStart(start)
+                line.SetEnd(end)
+
+                line.SetWidth(line_width)
+
+                board.Add(line)
+
+                ind += 1
         pass
 
 

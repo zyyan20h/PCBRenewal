@@ -17,7 +17,7 @@ import wx.xrc
 class ComparisonOptionsDialog ( wx.Dialog ):
 
 	def __init__( self, parent ):
-		wx.Dialog.__init__ ( self, parent, id = wx.ID_ANY, title = u"Compare Boards", pos = wx.DefaultPosition, size = wx.Size( 682,596 ), style = wx.DEFAULT_DIALOG_STYLE|wx.RESIZE_BORDER )
+		wx.Dialog.__init__ ( self, parent, id = wx.ID_ANY, title = u"Compare Boards", pos = wx.DefaultPosition, size = wx.Size( 717,802 ), style = wx.DEFAULT_DIALOG_STYLE|wx.RESIZE_BORDER )
 
 		self.SetSizeHints( wx.DefaultSize, wx.DefaultSize )
 
@@ -78,6 +78,16 @@ class ComparisonOptionsDialog ( wx.Dialog ):
 
 		bSizer4.Add( sbSizerNewFile, 1, wx.EXPAND, 5 )
 
+		sbSizerAlignBoards = wx.StaticBoxSizer( wx.StaticBox( self.PanelAll, wx.ID_ANY, u"Align Boards" ), wx.VERTICAL )
+
+		rbAlignCornerChoices = [ u"Top Left", u"Bottom Left", u"Top Right", u"Bottom Right" ]
+		self.rbAlignCorner = wx.RadioBox( sbSizerAlignBoards.GetStaticBox(), wx.ID_ANY, u"Pick a corner", wx.DefaultPosition, wx.DefaultSize, rbAlignCornerChoices, 2, wx.RA_SPECIFY_ROWS )
+		self.rbAlignCorner.SetSelection( 0 )
+		sbSizerAlignBoards.Add( self.rbAlignCorner, 0, wx.ALL, 5 )
+
+
+		bSizer4.Add( sbSizerAlignBoards, 1, wx.EXPAND, 5 )
+
 		bSizer10 = wx.BoxSizer( wx.HORIZONTAL )
 
 		sbSizerCompLayers = wx.StaticBoxSizer( wx.StaticBox( self.PanelAll, wx.ID_ANY, u"Layers to Compare" ), wx.VERTICAL )
@@ -91,8 +101,10 @@ class ComparisonOptionsDialog ( wx.Dialog ):
 		self.listBoxCompLayers = wx.ListBox( self.PanelCompLayers, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, listBoxCompLayersChoices, wx.LB_MULTIPLE )
 		bSizer2.Add( self.listBoxCompLayers, 1, wx.ALL|wx.EXPAND, 5 )
 
-		self.checkBoxLineComp = wx.CheckBox( self.PanelCompLayers, wx.ID_ANY, u"Do Line Comparison", wx.DefaultPosition, wx.DefaultSize, wx.ALIGN_RIGHT )
-		bSizer2.Add( self.checkBoxLineComp, 0, wx.ALL|wx.ALIGN_RIGHT, 5 )
+		rbCompMethodChoices = [ u"Component", u"Line", u"Hybrid" ]
+		self.rbCompMethod = wx.RadioBox( self.PanelCompLayers, wx.ID_ANY, u"Comparison Method", wx.DefaultPosition, wx.DefaultSize, rbCompMethodChoices, 1, wx.RA_SPECIFY_COLS )
+		self.rbCompMethod.SetSelection( 0 )
+		bSizer2.Add( self.rbCompMethod, 0, wx.ALL|wx.ALIGN_RIGHT, 5 )
 
 		self.ButtonCompare = wx.Button( self.PanelCompLayers, wx.ID_ANY, u"Compare", wx.DefaultPosition, wx.DefaultSize, 0 )
 		bSizer2.Add( self.ButtonCompare, 0, wx.ALL|wx.ALIGN_RIGHT, 5 )
@@ -124,6 +136,10 @@ class ComparisonOptionsDialog ( wx.Dialog ):
 
 		bSizer4.Add( bSizer10, 10, wx.EXPAND, 5 )
 
+		self.PanelLog = wx.ScrolledWindow( self.PanelAll, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, wx.HSCROLL|wx.VSCROLL )
+		self.PanelLog.SetScrollRate( 5, 5 )
+		bSizer4.Add( self.PanelLog, 2, wx.ALL|wx.EXPAND, 5 )
+
 		self.ButtonOK = wx.Button( self.PanelAll, wx.ID_ANY, u"OK", wx.DefaultPosition, wx.DefaultSize, 0 )
 		bSizer4.Add( self.ButtonOK, 0, wx.ALL|wx.ALIGN_RIGHT, 5 )
 
@@ -144,6 +160,8 @@ class ComparisonOptionsDialog ( wx.Dialog ):
 		self.ButtonOldFileUpload.Bind( wx.EVT_BUTTON, self.UploadOldFile )
 		self.ButtonNewFileUpload.Bind( wx.EVT_BUTTON, self.UploadNewFile )
 		self.ButtonUseCurrBoard.Bind( wx.EVT_BUTTON, self.UseCurrentBoard )
+		self.rbAlignCorner.Bind( wx.EVT_RADIOBOX, self.AlignCornerChanged )
+		self.rbCompMethod.Bind( wx.EVT_RADIOBOX, self.ComparisonMethodChanged )
 		self.ButtonCompare.Bind( wx.EVT_BUTTON, self.CompareBoards )
 		self.ButtonExportFiles.Bind( wx.EVT_BUTTON, self.ExportFiles )
 		self.ButtonOK.Bind( wx.EVT_BUTTON, self.OKClicked )
@@ -163,6 +181,12 @@ class ComparisonOptionsDialog ( wx.Dialog ):
 		event.Skip()
 
 	def UseCurrentBoard( self, event ):
+		event.Skip()
+
+	def AlignCornerChanged( self, event ):
+		event.Skip()
+
+	def ComparisonMethodChanged( self, event ):
 		event.Skip()
 
 	def CompareBoards( self, event ):
