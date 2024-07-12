@@ -114,7 +114,7 @@ ESPboyInit myESPboy;
 //#define APP_MARKER 0xCA29
 //#include "GAMES/rom_30.h" //PacMan
 //#define APP_MARKER 0xCA30
-//#include "GAMES/rom_31.h" //Adventure Island/Users/jiashengli/Documents/Research_Local/renewablePCB/Arduino/ESPboy_GameBoy/lib/ESPboyInit.h
+//#include "GAMES/rom_31.h" //Adventure Island
 //#define APP_MARKER 0xCA31
 //#include "GAMES/rom_32.h" //Adventure Island II
 //#define APP_MARKER 0xCA32

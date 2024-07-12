@@ -16,38 +16,28 @@ v1.0
 #include "ESPboylogo.h"
 
 #include <TFT_eSPI.h>          //to draw at LCD TFT
-#include <ESP8266WiFi.h>       //to control WiFi
+#include <ESP8266WiFi.h>       //to control WiFi/Users/jiashengli/Documents/Arduino/ESPboy_GameBoy/lib/ESPboyInit.cpp
 
 #include <FS.h> 
 using fs::FS;
 
 #define MCP23017address 0 // actually it's 0x20 but in <Adafruit_MCP23017.h> lib there is (x|0x20) :)
 #define MCP4725address  0x60
-#define CSTFTPIN 		8  //Chip Select pin for LCD (it's on the MCP23017 GPIO expander GPIO8)
+#define CSTFTPIN 		12  //Chip Select pin for LCD (it's on the MCP23017 GPIO expander GPIO8)
 
 #define LEDPIN         D4
 #define SOUNDPIN       D3
 
-// #define PAD_LEFT        0x01
-// #define PAD_UP          0x02
-// #define PAD_DOWN        0x04
-// #define PAD_RIGHT       0x08
-// #define PAD_ACT         0x10
-// #define PAD_ESC         0x20
-// #define PAD_LFT         0x40
-// #define PAD_RGT         0x80
-// #define PAD_ANY         0xff
-
-
-#define PAD_LEFT        0x04
-#define PAD_UP          0x08
-#define PAD_DOWN        0x20
-#define PAD_RIGHT       0x10
-#define PAD_ACT         0x80
-#define PAD_ESC         0x40
-#define PAD_LFT         0x02
-#define PAD_RGT         0x01
+#define PAD_LEFT        0x01
+#define PAD_UP          0x02
+#define PAD_DOWN        0x04
+#define PAD_RIGHT       0x08
+#define PAD_ACT         0x10
+#define PAD_ESC         0x20
+#define PAD_LFT         0x40
+#define PAD_RGT         0x80
 #define PAD_ANY         0xff
+
 
 class ESPboyInit{
 

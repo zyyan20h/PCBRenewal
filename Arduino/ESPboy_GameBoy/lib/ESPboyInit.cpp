@@ -38,8 +38,10 @@ void ESPboyInit::begin(const char *appName) {
   //noPlayTone();
   
 //LCD TFT init
-  mcp.pinMode(CSTFTPIN, OUTPUT);
-  mcp.digitalWrite(CSTFTPIN, LOW);
+  // mcp.pinMode(CSTFTPIN, OUTPUT);
+  // mcp.digitalWrite(CSTFTPIN, LOW);
+  pinMode(CSTFTPIN, OUTPUT);
+  digitalWrite(CSTFTPIN, LOW);
   tft.begin();
   tft.setSwapBytes(true);
   delay(100);

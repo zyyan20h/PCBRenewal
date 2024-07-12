@@ -18,3 +18,17 @@ https://www.patreon.com/shiru8bit
 [screwed to ESPboy by RomanS](https://hackaday.io/project/164830-espboy-games-iot-stem-for-education-fun)
 
 MIT license
+
+Upload setup:
+--->CPU Clock 160Mhz
+--->Board: LOLIN(WeMos) D1 R1
+
+--->23017 Lib file V1.1 (newer than v.1.3 will not work)
+
+// Change for CS PIN
+--->#define CSTFTPIN 		12  
+
+  // mcp.pinMode(CSTFTPIN, OUTPUT);
+  // mcp.digitalWrite(CSTFTPIN, LOW);
+--->pinMode(CSTFTPIN, OUTPUT);
+--->digitalWrite(CSTFTPIN, LOW);
