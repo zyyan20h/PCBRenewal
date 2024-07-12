@@ -28,16 +28,26 @@ using fs::FS;
 #define LEDPIN         D4
 #define SOUNDPIN       D3
 
-#define PAD_LEFT        0x01
-#define PAD_UP          0x02
-#define PAD_DOWN        0x04
-#define PAD_RIGHT       0x08
-#define PAD_ACT         0x10
-#define PAD_ESC         0x20
-#define PAD_LFT         0x40
-#define PAD_RGT         0x80
-#define PAD_ANY         0xff
+// #define PAD_LEFT        0x01
+// #define PAD_UP          0x02
+// #define PAD_DOWN        0x04
+// #define PAD_RIGHT       0x08
+// #define PAD_ACT         0x10
+// #define PAD_ESC         0x20
+// #define PAD_LFT         0x40
+// #define PAD_RGT         0x80
+// #define PAD_ANY         0xff
 
+
+#define PAD_LEFT        0x04
+#define PAD_UP          0x08
+#define PAD_DOWN        0x20
+#define PAD_RIGHT       0x10
+#define PAD_ACT         0x80
+#define PAD_ESC         0x40
+#define PAD_LFT         0x02
+#define PAD_RGT         0x01
+#define PAD_ANY         0xff
 
 class ESPboyInit{
 
