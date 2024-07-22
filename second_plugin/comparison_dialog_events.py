@@ -3,6 +3,7 @@ import wx.lib.scrolledpanel
 # import wx.svg
 from .comparison_dialog_ui import ComparisonOptionsDialog
 from .pcb_components import PcbBoard, align_boards
+from .selection_dialog_events import ComponentSelectionDialog
 
 # TODO Maybe call layout locally instead of self.layout everywhere
 
@@ -17,40 +18,24 @@ class BoardComparisonWindow(ComparisonOptionsDialog):
         self.align_corner = "topleft"
         self.comparison_method = "component"
         self.export_data = []
+        self.log_sizer = None
 
     def DialogInit(self, event):
-        
-        # layer_sizer = self.PanelCompLayers.GetSizer()
-
-        # new_cb = wx.CheckBox(self.PanelCompLayers, wx.ID_ANY, u"Test", wx.DefaultPosition, wx.DefaultSize,)
-        # layer_sizer.Add(new_cb)
-
-        # all_layers = ["1", "22", "333", "4444","1", "22", "333", "4444","1", "22", "333", "4444","1", "22", "333", "4444","1", "22", "333", "4444","1", "22", "333", "4444","1", "22", "333", "4444","1", "22", "333", "4444"]
-
-        # layer_sizer = wx.BoxSizer(orient=wx.VERTICAL)
-        
-
-        # for layer in all_layers:
-        #     new_cb = wx.CheckBox(self.PanelCompLayers, wx.ID_ANY, layer, wx.DefaultPosition, wx.DefaultSize, 0)
-        #     layer_sizer.Add(new_cb, 1, wx.ALL, 5)
-
-        # self.PanelCompLayers.SetSizer(layer_sizer)
-
-        # self.UpdateCompLayers()
-        # self.UploadOldFile(event=None)
-        # raise Exception("FUCK")
-        # self.CompareBoards("AAA)
-
         self.UseCurrentBoard(None)
-        self.log_sizer = wx.BoxSizer(wx.VERTICAL)
-        self.PanelLog.SetSizer(self.log_sizer)
-
+        if not self.log_sizer:
+            self.log_sizer = wx.BoxSizer(wx.VERTICAL)
+            self.PanelLog.SetSizer(self.log_sizer)
+            # self.AddToLog("Dialog init!")
         pass
     
     def AddToLog(self, log_text):
+        # new_label = wx.StaticText(self.PanelLog, label=f"{self.log_sizer.GetItemCount() + 1}- {log_text}")
         new_label = wx.StaticText(self.PanelLog, label=log_text)
         self.log_sizer.Add(new_label)
-        self.PanelLog.Layout()
+        
+        
+        self.Layout()
+        self.PanelLog.ScrollPages(1)
 
     def OpenFileDialog(self):
         ofd = wx.FileDialog(parent=None, message="Select Board File", \
@@ -124,7 +109,22 @@ class BoardComparisonWindow(ComparisonOptionsDialog):
         choices = ["component", "line", "hybrid"]
         index = self.rbCompMethod.GetSelection()
         self.comparison_method = choices[index]
-        
+        self.AddToLog(f"Comparison method changed to {choices[index]}")
+    
+    def ChangeEdgeSelection(self, event):
+        self.Hide()
+        selection_result = ComponentSelectionDialog(self).Show()   
+
+
+    def HandleEdgeSelected(self):
+        new_edge_corner = self.new_board.change_edge()
+        if new_edge_corner:
+            log_message = f"Changed edge, with top left corner at {new_edge_corner}"
+        else:
+            log_message = "Failed to get edge"
+
+        self.AddToLog(log_message)
+        # self.AddToLog(str(self.new_board.edge))
 
     def AlignCornerChanged(self, event):
         choices = ["topleft", "bottomleft", "topright", "bottomright"]
@@ -141,7 +141,10 @@ class BoardComparisonWindow(ComparisonOptionsDialog):
         self.PanelExportFiles.DestroyChildren()
 
         # Aligning the boards
+        # self.AddToLog("Before aligning " + str(self.new_board.edge.GetStart()))
         align_boards(self.new_board, self.old_board, corner_name=self.align_corner)
+        self.AddToLog("Boards aligned")
+        # self.AddToLog("After aligning " + str(self.new_board.edge.GetStart()))
 
         #Convert from indexes to layer names
         selected_layers = [self.all_layers[index] for index in selected_layers]
@@ -208,5 +211,5 @@ class BoardComparisonWindow(ComparisonOptionsDialog):
         # if self.old_board_path != None:
         #     self.EndModal(wx.ID_OK)
         self.new_board.open_disp_board()
-        self.EndModal(wx.ID_OK)
+        self.Close()
         pass

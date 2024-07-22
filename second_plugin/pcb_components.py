@@ -41,6 +41,11 @@ def offset_polygon(polygon, offset):
     return new_polygon
 
 def align_boards(new_board, old_board, corner_name=None, component=None):
+    if not new_board.edge:
+        new_board.set_default_edge()
+    if not old_board.edge:
+        old_board.set_default_edge()
+
     if corner_name:
         new_corner = new_board.get_corner(corner_name)
         old_corner = old_board.get_corner(corner_name)
@@ -49,6 +54,18 @@ def align_boards(new_board, old_board, corner_name=None, component=None):
         if offset_vector != pcbnew.VECTOR2I(0,0):
             old_board.offset(offset_vector)
     pass    
+
+# Will only work on the board the plugin is run on
+def get_selection():
+    selected_shapes = pcbnew.GetCurrentSelection()
+
+    if not selected_shapes.empty():
+        shape = selected_shapes[0]
+        shape = shape.Cast()
+        return shape
+    
+    else:
+        return None
 
 # Getting all user layers
 printable_layers = list(range(pcbnew.User_1, pcbnew.User_1 + 9))
@@ -343,7 +360,7 @@ class PcbBoard():
         self.gnd_nets = []
 
         self.holes = []
-        self.edge = None
+        self.edge = get_selection()
 
         self.export_board = None
         self.disp_board = None
@@ -372,6 +389,15 @@ class PcbBoard():
         for pad in self.pad_lst:
             pad.offset(offset)
         pass
+
+    def change_edge(self):
+        new_edge = get_selection()
+
+        if new_edge:
+            self.edge = new_edge
+            return new_edge.GetStart()
+        
+        return None
 
     def get_layers(self):
         # Gets all layers and converts them to their readable names
@@ -432,9 +458,23 @@ class PcbBoard():
                 max_area = curr_area
                 max_area_ind = ind
 
-        self.edge = drawings.pop(max_area_ind)
+        if not self.edge:
+            self.edge = drawings.pop(max_area_ind)
 
         self.holes = [PcbHole(d.Duplicate()) for d in drawings]
+
+    def set_default_edge(self):      
+        # Getting all the shapes on the edge cuts layer
+        # return
+        drawings = list(filter(lambda x: x.GetLayer() == pcbnew.Edge_Cuts, self.board.GetDrawings()))
+
+        for ind, d in enumerate(drawings):
+            curr_area = d.GetBoundingBox().GetArea()
+            if curr_area > max_area:
+                max_area = curr_area
+                max_area_ind = ind
+
+        self.edge = drawings[max_area_ind]
 
     def create_path_dict(self, net_dict=None, selected_layers=None):
         if not net_dict:
@@ -491,8 +531,8 @@ class PcbBoard():
 
         for layer in selected_layers:
             # Making sure changes to these lists don't affect the originals
-            old_net_list = old_board.net_dict[layer]
-            write_net_dict[layer] = self.net_dict[layer]
+            old_net_list = old_board.net_dict[layer] if layer in old_board.net_dict else []
+            write_net_dict[layer] = self.net_dict[layer] if layer in self.net_dict else []
             erase_net_dict[layer] = []
 
             for old_ind, old_net in enumerate(old_net_list):
@@ -634,6 +674,7 @@ class PcbBoard():
     def plot_paths(self, path_dict, layer_dict, plot_board, mode):
         for layer in path_dict:
             path_dict[layer].plot_in_kicad(plot_board, layer_dict[mode][layer])
+            path_dict[layer].export_path(self, os.path.join(self.comp_folder_path, f"{mode}_{layer}.svg"))
 
     def compare_and_plot(self, old_board, selected_layers= None, compare_paths="component"):
         print(f"start of comparinf, method is {compare_paths}")
@@ -723,4 +764,5 @@ class PcbBoard():
 
         # self.plot_gerbers(self.export_board, self.comp_folder_path, file_names)
         self.plot_svg(self.export_board, self.comp_folder_path)
+        
         pass

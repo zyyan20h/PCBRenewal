@@ -20,28 +20,12 @@ class ComplexPluginAction(pcbnew.ActionPlugin):
         
         # new_board_ref = pcbnew.LoadBoard(r"D:\KiCad\PCBS\test2\test2.kicad_pcb")
 
-        # app = wx.App()
+        app = wx.App()
         bcw = BoardComparisonWindow()
-        bcw.ShowModal()
-        bcw.Destroy()
+        bcw.Show()
+        app.MainLoop()
+        # bcw.Destroy()
         # del app
-
-        # # If you cancel while choosing a file
-        # if not bcw.old_board_path:
-        #     return
-
-        # old_board_ref = pcbnew.LoadBoard(bcw.old_board_path)
-
-        # new_board_ref = pcbnew.GetBoard()
-
-        # # new_board_ref = pcbnew.LoadBoard(r"D:\KiCad\PCBS\renewablePCB\KiCAD_designs\bristleBot_V2\bristleBot_V2.kicad_pcb")
-
-        # # old_board_ref = pcbnew.LoadBoard(r"D:\KiCad\PCBS\renewablePCB\KiCAD_designs\bristleBot\bristleBot.kicad_pcb")
-        # # old_board_ref = pcbnew.LoadBoard(r"D:\KiCad\PCBS\test1\test1.kicad_pcb")
-
-        # new_board = PcbBoard(new_board_ref)
-        # old_board = PcbBoard(old_board_ref)
-
-        # new_board.compare_and_plot(old_board)
+        print("end of program")
 
         pcbnew.Refresh()
