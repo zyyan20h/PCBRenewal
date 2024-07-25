@@ -1,4 +1,4 @@
-23046145108701847
+23054750520380640
 Audio_Module
 Reverb_BTDR-1H
 Digital Reverberation Unit, http://www.belton.co.kr/inc/downfile.php?seq=17&file=pdf (footprint from http://www.uk-electronic.de/PDF/BTDR-1.pdf)
@@ -94402,6 +94402,20 @@ B2B-PH-SM4-TBLFSN
 9
 9
 esp_lib
+CAP_EEEFP1C471AL
+
+
+0
+2
+2
+esp_lib
+D2FS-FL-N-A_OMR
+
+D2FS-FL-N-A 
+0
+3
+3
+esp_lib
 ESP-12F
 
 
@@ -94423,6 +94437,13 @@ JST_B4B-ZR-SM4-TFT_LF__SN_
 6
 6
 esp_lib
+JST_S3B-ZR-SM4A-TF
+3 PINS JST SMD Connector
+
+0
+5
+5
+esp_lib
 KMR2_G_CNK
 
 KMR223G LFG 
@@ -94438,6 +94459,13 @@ MCP23017
 28
 esp_lib
 MX1508
+
+
+0
+16
+16
+esp_lib
+PAM8403
 
 
 0
@@ -94473,6 +94501,13 @@ SOT229P700X180-4N
 4
 esp_lib
 switch
+
+
+0
+4
+4
+esp_lib
+switch_6
 
 
 0
