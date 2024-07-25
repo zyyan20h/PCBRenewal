@@ -142,6 +142,10 @@ class PcbPad():
         # self.size = size
         self.layer = pad.GetLayerName()
         self.polygon = pad.GetEffectivePolygon()
+        self.poly_points = None
+        if self.polygon.OutlineCount() > 0:
+            line_chain = self.polygon.Outline(0)
+            self.poly_points = [ p for p in line_chain.CPoints()]
         # self.orientation = orientation
         self.net_name = pad.GetNetname()
         
@@ -342,15 +346,20 @@ class PcbHole():
 class PcbBoard():
     # def __init__(self, board=None, path=None):
     def __init__(self, path=None):  
+        self.is_valid = True
+        
         if not path:
             board = pcbnew.GetBoard()
+            print("board in pcbboard:", board)
             if not board:
+                print("kill me")
+                self.is_valid = False
                 return
         else:
             board = pcbnew.LoadBoard(path)
-
+        print("what is happening")
         self.board = board
-
+        
         track_lst = filter(lambda x: type(x) == pcbnew.PCB_TRACK, board.GetTracks())
         self.track_lst = [PcbTrack(track) for track in track_lst]
 
@@ -446,7 +455,7 @@ class PcbBoard():
     def add_holes(self):      
         # Getting all the shapes on the edge cuts layer
         drawings = list(filter(lambda x: x.GetLayer() == pcbnew.Edge_Cuts, self.board.GetDrawings()))
-
+        self.edge_cut_shapes = [(d.GetShapeStr(), d.GetStart(), d.GetEnd(), d) for d in drawings]
         # However this includes the outer edge of the board
         # So let's remove the one that has the most area
         max_area = 0
@@ -511,8 +520,8 @@ class PcbBoard():
             if layer in old_path_dict:
                 old_path = old_path_dict[layer]
                 new_path = new_path_dict[layer]
-                erase_path_dict[layer] = new_path.path_difference(old_path)
-                write_path_dict[layer] = old_path.path_difference(new_path)
+                erase_path_dict[layer] = old_path.path_difference(new_path)
+                write_path_dict[layer] = new_path.path_difference(old_path)
 
         return erase_path_dict, write_path_dict
         
@@ -699,6 +708,8 @@ class PcbBoard():
 
         print(f"selected layers are {selected_layers}")
         print("hoels created")
+
+
         if compare_paths == "line":
             erase_paths, write_paths = self.compare_paths(old_board=old_board, selected_layers=selected_layers)
             self.disp_board = self.create_board_copy("comparison")
@@ -746,8 +757,8 @@ class PcbBoard():
 
         save_board(self.disp_board)
         save_board(self.export_board)
-        layer_pngs = None
-        return layer_pngs
+
+        return erase_paths, write_paths
 
     def path_svg(self, net_list, name):
         col = ShapeCollection(net_list=net_list)

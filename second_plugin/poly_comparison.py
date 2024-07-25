@@ -6,7 +6,7 @@ import math
 
 IU_PER_MM = pcbnew.PCB_IU_PER_MM
 
-DEFAULT_OFFSET = 0.6
+DEFAULT_OFFSET = 0.4
 
 # SHAPE_POLY_SET class in pcbnew seems to have BooleanAdd, BooleanSubtract classes
 # May be possible to remove the need for shapely library
@@ -143,6 +143,8 @@ class ShapeCollection:
             self.combined_net_paths = union_all(path_lst)
             self.combined_outlines = union_all(outline_lst)
 
+        self.net_path_polygon = None
+
     def path_difference(self, other):
         diff = self.combined_net_paths.difference(other.combined_net_paths)
 
@@ -167,6 +169,17 @@ class ShapeCollection:
                     </svg>'''
             svg_file.write(svg_text)
 
+    # Returns list of polygons created out of paths
+    def get_poly_list(self):
+        if not self.net_path_polygon:
+            self.net_path_polygon = self.combined_net_paths.buffer((self.offset/2 ) * IU_PER_MM)
+        
+        if type(self.net_path_polygon) == MultiPolygon:
+            poly_list = self.net_path_polygon.geoms
+        else:
+            poly_list = [self.net_path_polygon]
+
+        return poly_list
 
     def plot_in_kicad(self, board, layer):
         shape_list = self.combined_net_paths.geoms

@@ -78,27 +78,45 @@ class ComparisonOptionsDialog ( wx.Dialog ):
 
 		bSizer4.Add( sbSizerNewFile, 1, wx.EXPAND, 5 )
 
-		sbSizerAlignBoards = wx.StaticBoxSizer( wx.StaticBox( self.PanelAll, wx.ID_ANY, u"Align Boards" ), wx.VERTICAL )
+		self.PanelOperations = wx.Panel( self.PanelAll, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, wx.TAB_TRAVERSAL )
+		bSizer15 = wx.BoxSizer( wx.HORIZONTAL )
 
-		bSizer71 = wx.BoxSizer( wx.VERTICAL )
+		bSizer13 = wx.BoxSizer( wx.VERTICAL )
 
-		self.buttonSelectEdges = wx.Button( sbSizerAlignBoards.GetStaticBox(), wx.ID_ANY, u"Select Edge Cut", wx.DefaultPosition, wx.DefaultSize, 0 )
-		bSizer71.Add( self.buttonSelectEdges, 0, wx.ALL, 5 )
+		sbSizerAlignBoards = wx.StaticBoxSizer( wx.StaticBox( self.PanelOperations, wx.ID_ANY, u"Align Boards" ), wx.VERTICAL )
 
-		rbAlignCornerChoices = [ u"Top Left", u"Bottom Left", u"Top Right", u"Bottom Right" ]
-		self.rbAlignCorner = wx.RadioBox( sbSizerAlignBoards.GetStaticBox(), wx.ID_ANY, u"Pick a corner", wx.DefaultPosition, wx.DefaultSize, rbAlignCornerChoices, 2, wx.RA_SPECIFY_ROWS )
-		self.rbAlignCorner.SetSelection( 0 )
-		bSizer71.Add( self.rbAlignCorner, 0, wx.ALL, 5 )
+		bSizer71 = wx.BoxSizer( wx.HORIZONTAL )
+
+		bSizer12 = wx.BoxSizer( wx.VERTICAL )
+
+		m_radioBox4Choices = [ u"Radio Button" ]
+		self.m_radioBox4 = wx.RadioBox( sbSizerAlignBoards.GetStaticBox(), wx.ID_ANY, u"wxRadioBox", wx.DefaultPosition, wx.DefaultSize, m_radioBox4Choices, 1, wx.RA_SPECIFY_COLS )
+		self.m_radioBox4.SetSelection( 0 )
+		bSizer12.Add( self.m_radioBox4, 0, wx.ALL, 5 )
+
+		bSizer11 = wx.BoxSizer( wx.HORIZONTAL )
+
+		m_comboBox1Choices = []
+		self.m_comboBox1 = wx.ComboBox( sbSizerAlignBoards.GetStaticBox(), wx.ID_ANY, u"Combo!", wx.DefaultPosition, wx.DefaultSize, m_comboBox1Choices, 0 )
+		bSizer11.Add( self.m_comboBox1, 0, wx.ALL, 5 )
+
+		m_comboBox3Choices = []
+		self.m_comboBox3 = wx.ComboBox( sbSizerAlignBoards.GetStaticBox(), wx.ID_ANY, u"Combo!", wx.DefaultPosition, wx.DefaultSize, m_comboBox3Choices, 0 )
+		bSizer11.Add( self.m_comboBox3, 0, wx.ALL, 5 )
+
+
+		bSizer12.Add( bSizer11, 1, wx.EXPAND, 5 )
+
+
+		bSizer71.Add( bSizer12, 1, wx.EXPAND, 5 )
 
 
 		sbSizerAlignBoards.Add( bSizer71, 1, wx.EXPAND, 5 )
 
 
-		bSizer4.Add( sbSizerAlignBoards, 1, wx.EXPAND, 5 )
+		bSizer13.Add( sbSizerAlignBoards, 7, wx.EXPAND, 5 )
 
-		bSizer10 = wx.BoxSizer( wx.HORIZONTAL )
-
-		sbSizerCompLayers = wx.StaticBoxSizer( wx.StaticBox( self.PanelAll, wx.ID_ANY, u"Layers to Compare" ), wx.VERTICAL )
+		sbSizerCompLayers = wx.StaticBoxSizer( wx.StaticBox( self.PanelOperations, wx.ID_ANY, u"Layers to Compare" ), wx.VERTICAL )
 
 		self.PanelCompLayers = wx.Panel( sbSizerCompLayers.GetStaticBox(), wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, 0 )
 		self.PanelCompLayers.SetBackgroundColour( wx.SystemSettings.GetColour( wx.SYS_COLOUR_BTNFACE ) )
@@ -124,7 +142,18 @@ class ComparisonOptionsDialog ( wx.Dialog ):
 		sbSizerCompLayers.Add( self.PanelCompLayers, 1, wx.EXPAND|wx.ALL, 5 )
 
 
-		bSizer10.Add( sbSizerCompLayers, 5, wx.EXPAND, 5 )
+		bSizer13.Add( sbSizerCompLayers, 5, wx.EXPAND, 5 )
+
+
+		bSizer15.Add( bSizer13, 1, wx.EXPAND, 5 )
+
+
+		self.PanelOperations.SetSizer( bSizer15 )
+		self.PanelOperations.Layout()
+		bSizer15.Fit( self.PanelOperations )
+		bSizer4.Add( self.PanelOperations, 1, wx.EXPAND |wx.ALL, 0 )
+
+		bSizer10 = wx.BoxSizer( wx.HORIZONTAL )
 
 
 		bSizer10.Add( ( 10, 0), 0, wx.EXPAND, 5 )
@@ -166,12 +195,11 @@ class ComparisonOptionsDialog ( wx.Dialog ):
 		self.Centre( wx.BOTH )
 
 		# Connect Events
+		self.Bind( wx.EVT_CLOSE, self.OnClose )
 		self.Bind( wx.EVT_INIT_DIALOG, self.DialogInit )
 		self.ButtonOldFileUpload.Bind( wx.EVT_BUTTON, self.UploadOldFile )
 		self.ButtonNewFileUpload.Bind( wx.EVT_BUTTON, self.UploadNewFile )
 		self.ButtonUseCurrBoard.Bind( wx.EVT_BUTTON, self.UseCurrentBoard )
-		self.buttonSelectEdges.Bind( wx.EVT_BUTTON, self.ChangeEdgeSelection )
-		self.rbAlignCorner.Bind( wx.EVT_RADIOBOX, self.AlignCornerChanged )
 		self.rbCompMethod.Bind( wx.EVT_RADIOBOX, self.ComparisonMethodChanged )
 		self.ButtonCompare.Bind( wx.EVT_BUTTON, self.CompareBoards )
 		self.ButtonExportFiles.Bind( wx.EVT_BUTTON, self.ExportFiles )
@@ -182,6 +210,9 @@ class ComparisonOptionsDialog ( wx.Dialog ):
 
 
 	# Virtual event handlers, override them in your derived class
+	def OnClose( self, event ):
+		event.Skip()
+
 	def DialogInit( self, event ):
 		event.Skip()
 
@@ -192,12 +223,6 @@ class ComparisonOptionsDialog ( wx.Dialog ):
 		event.Skip()
 
 	def UseCurrentBoard( self, event ):
-		event.Skip()
-
-	def ChangeEdgeSelection( self, event ):
-		event.Skip()
-
-	def AlignCornerChanged( self, event ):
 		event.Skip()
 
 	def ComparisonMethodChanged( self, event ):
