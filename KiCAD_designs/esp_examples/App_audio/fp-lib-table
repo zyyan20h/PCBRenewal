@@ -1,0 +1,4 @@
+(fp_lib_table
+  (version 7)
+  (lib (name "esp_lib")(type "KiCad")(uri "C:/Users/zyyan/OneDrive/Desktop/renewablePCB/KiCAD_designs/esp_examples/esp_lib.pretty")(options "")(descr ""))
+)
