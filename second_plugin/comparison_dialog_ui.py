@@ -24,6 +24,8 @@ class ComparisonOptionsDialog ( wx.Dialog ):
 		bSizer6 = wx.BoxSizer( wx.VERTICAL )
 
 		self.PanelAll = wx.Panel( self, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, wx.TAB_TRAVERSAL )
+		bSizer14 = wx.BoxSizer( wx.HORIZONTAL )
+
 		bSizer4 = wx.BoxSizer( wx.VERTICAL )
 
 		sbSizerOldFile = wx.StaticBoxSizer( wx.StaticBox( self.PanelAll, wx.ID_ANY, u"Old Board" ), wx.VERTICAL )
@@ -49,7 +51,7 @@ class ComparisonOptionsDialog ( wx.Dialog ):
 		sbSizerOldFile.Add( self.PanelOldFileUpload, 1, wx.EXPAND |wx.ALL, 5 )
 
 
-		bSizer4.Add( sbSizerOldFile, 1, wx.EXPAND, 5 )
+		bSizer4.Add( sbSizerOldFile, 0, wx.EXPAND, 5 )
 
 		sbSizerNewFile = wx.StaticBoxSizer( wx.StaticBox( self.PanelAll, wx.ID_ANY, u"New Board" ), wx.VERTICAL )
 
@@ -76,7 +78,7 @@ class ComparisonOptionsDialog ( wx.Dialog ):
 		sbSizerNewFile.Add( self.PanelNewFileUpload, 1, wx.EXPAND |wx.ALL, 5 )
 
 
-		bSizer4.Add( sbSizerNewFile, 1, wx.EXPAND, 5 )
+		bSizer4.Add( sbSizerNewFile, 0, wx.EXPAND, 5 )
 
 		self.PanelOperations = wx.Panel( self.PanelAll, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, wx.TAB_TRAVERSAL )
 		bSizer15 = wx.BoxSizer( wx.HORIZONTAL )
@@ -85,36 +87,11 @@ class ComparisonOptionsDialog ( wx.Dialog ):
 
 		sbSizerAlignBoards = wx.StaticBoxSizer( wx.StaticBox( self.PanelOperations, wx.ID_ANY, u"Align Boards" ), wx.VERTICAL )
 
-		bSizer71 = wx.BoxSizer( wx.HORIZONTAL )
-
-		bSizer12 = wx.BoxSizer( wx.VERTICAL )
-
-		m_radioBox4Choices = [ u"Radio Button" ]
-		self.m_radioBox4 = wx.RadioBox( sbSizerAlignBoards.GetStaticBox(), wx.ID_ANY, u"wxRadioBox", wx.DefaultPosition, wx.DefaultSize, m_radioBox4Choices, 1, wx.RA_SPECIFY_COLS )
-		self.m_radioBox4.SetSelection( 0 )
-		bSizer12.Add( self.m_radioBox4, 0, wx.ALL, 5 )
-
-		bSizer11 = wx.BoxSizer( wx.HORIZONTAL )
-
-		m_comboBox1Choices = []
-		self.m_comboBox1 = wx.ComboBox( sbSizerAlignBoards.GetStaticBox(), wx.ID_ANY, u"Combo!", wx.DefaultPosition, wx.DefaultSize, m_comboBox1Choices, 0 )
-		bSizer11.Add( self.m_comboBox1, 0, wx.ALL, 5 )
-
-		m_comboBox3Choices = []
-		self.m_comboBox3 = wx.ComboBox( sbSizerAlignBoards.GetStaticBox(), wx.ID_ANY, u"Combo!", wx.DefaultPosition, wx.DefaultSize, m_comboBox3Choices, 0 )
-		bSizer11.Add( self.m_comboBox3, 0, wx.ALL, 5 )
+		self.PanelAlignBoards = wx.Panel( sbSizerAlignBoards.GetStaticBox(), wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, wx.TAB_TRAVERSAL )
+		sbSizerAlignBoards.Add( self.PanelAlignBoards, 1, wx.ALL|wx.EXPAND, 5 )
 
 
-		bSizer12.Add( bSizer11, 1, wx.EXPAND, 5 )
-
-
-		bSizer71.Add( bSizer12, 1, wx.EXPAND, 5 )
-
-
-		sbSizerAlignBoards.Add( bSizer71, 1, wx.EXPAND, 5 )
-
-
-		bSizer13.Add( sbSizerAlignBoards, 7, wx.EXPAND, 5 )
+		bSizer13.Add( sbSizerAlignBoards, 1, wx.EXPAND|wx.LEFT, 0 )
 
 		sbSizerCompLayers = wx.StaticBoxSizer( wx.StaticBox( self.PanelOperations, wx.ID_ANY, u"Layers to Compare" ), wx.VERTICAL )
 
@@ -127,10 +104,21 @@ class ComparisonOptionsDialog ( wx.Dialog ):
 		self.listBoxCompLayers = wx.ListBox( self.PanelCompLayers, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, listBoxCompLayersChoices, wx.LB_MULTIPLE )
 		bSizer2.Add( self.listBoxCompLayers, 1, wx.ALL|wx.EXPAND, 5 )
 
+		bSizer16 = wx.BoxSizer( wx.VERTICAL )
+
 		rbCompMethodChoices = [ u"Component", u"Line", u"Hybrid" ]
 		self.rbCompMethod = wx.RadioBox( self.PanelCompLayers, wx.ID_ANY, u"Comparison Method", wx.DefaultPosition, wx.DefaultSize, rbCompMethodChoices, 1, wx.RA_SPECIFY_COLS )
 		self.rbCompMethod.SetSelection( 0 )
-		bSizer2.Add( self.rbCompMethod, 0, wx.ALL|wx.ALIGN_RIGHT, 5 )
+		bSizer16.Add( self.rbCompMethod, 0, wx.ALL, 5 )
+
+		self.cbExportOriginal = wx.CheckBox( self.PanelCompLayers, wx.ID_ANY, u"Export Original Board", wx.DefaultPosition, wx.DefaultSize, 0 )
+		bSizer16.Add( self.cbExportOriginal, 0, wx.ALL, 5 )
+
+		self.cbPlotEdgeCuts = wx.CheckBox( self.PanelCompLayers, wx.ID_ANY, u"Plot Edge Cuts", wx.DefaultPosition, wx.DefaultSize, 0 )
+		bSizer16.Add( self.cbPlotEdgeCuts, 0, wx.ALL, 5 )
+
+
+		bSizer2.Add( bSizer16, 1, wx.ALIGN_RIGHT, 5 )
 
 		self.ButtonCompare = wx.Button( self.PanelCompLayers, wx.ID_ANY, u"Compare", wx.DefaultPosition, wx.DefaultSize, 0 )
 		bSizer2.Add( self.ButtonCompare, 0, wx.ALL|wx.ALIGN_RIGHT, 5 )
@@ -142,36 +130,16 @@ class ComparisonOptionsDialog ( wx.Dialog ):
 		sbSizerCompLayers.Add( self.PanelCompLayers, 1, wx.EXPAND|wx.ALL, 5 )
 
 
-		bSizer13.Add( sbSizerCompLayers, 5, wx.EXPAND, 5 )
+		bSizer13.Add( sbSizerCompLayers, 2, wx.EXPAND, 5 )
 
 
-		bSizer15.Add( bSizer13, 1, wx.EXPAND, 5 )
+		bSizer15.Add( bSizer13, 1, wx.EXPAND, 0 )
 
 
 		self.PanelOperations.SetSizer( bSizer15 )
 		self.PanelOperations.Layout()
 		bSizer15.Fit( self.PanelOperations )
 		bSizer4.Add( self.PanelOperations, 1, wx.EXPAND |wx.ALL, 0 )
-
-		bSizer10 = wx.BoxSizer( wx.HORIZONTAL )
-
-
-		bSizer10.Add( ( 10, 0), 0, wx.EXPAND, 5 )
-
-		sbSizerExportFiles = wx.StaticBoxSizer( wx.StaticBox( self.PanelAll, wx.ID_ANY, u"Export Files" ), wx.VERTICAL )
-
-		self.PanelExportFiles = wx.ScrolledWindow( sbSizerExportFiles.GetStaticBox(), wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, wx.HSCROLL|wx.VSCROLL )
-		self.PanelExportFiles.SetScrollRate( 5, 5 )
-		sbSizerExportFiles.Add( self.PanelExportFiles, 1, wx.ALL|wx.EXPAND, 5 )
-
-		self.ButtonExportFiles = wx.Button( sbSizerExportFiles.GetStaticBox(), wx.ID_ANY, u"Export", wx.DefaultPosition, wx.DefaultSize, 0 )
-		sbSizerExportFiles.Add( self.ButtonExportFiles, 0, wx.ALL|wx.ALIGN_RIGHT, 5 )
-
-
-		bSizer10.Add( sbSizerExportFiles, 5, wx.EXPAND, 5 )
-
-
-		bSizer4.Add( bSizer10, 10, wx.EXPAND, 5 )
 
 		self.PanelLog = wx.ScrolledWindow( self.PanelAll, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, wx.HSCROLL|wx.VSCROLL )
 		self.PanelLog.SetScrollRate( 5, 5 )
@@ -183,9 +151,12 @@ class ComparisonOptionsDialog ( wx.Dialog ):
 		bSizer4.Add( self.ButtonOK, 0, wx.ALL|wx.ALIGN_RIGHT, 5 )
 
 
-		self.PanelAll.SetSizer( bSizer4 )
+		bSizer14.Add( bSizer4, 1, wx.EXPAND, 5 )
+
+
+		self.PanelAll.SetSizer( bSizer14 )
 		self.PanelAll.Layout()
-		bSizer4.Fit( self.PanelAll )
+		bSizer14.Fit( self.PanelAll )
 		bSizer6.Add( self.PanelAll, 1, wx.EXPAND |wx.ALL, 10 )
 
 
@@ -196,13 +167,12 @@ class ComparisonOptionsDialog ( wx.Dialog ):
 
 		# Connect Events
 		self.Bind( wx.EVT_CLOSE, self.OnClose )
-		self.Bind( wx.EVT_INIT_DIALOG, self.DialogInit )
 		self.ButtonOldFileUpload.Bind( wx.EVT_BUTTON, self.UploadOldFile )
 		self.ButtonNewFileUpload.Bind( wx.EVT_BUTTON, self.UploadNewFile )
 		self.ButtonUseCurrBoard.Bind( wx.EVT_BUTTON, self.UseCurrentBoard )
 		self.rbCompMethod.Bind( wx.EVT_RADIOBOX, self.ComparisonMethodChanged )
+		self.cbPlotEdgeCuts.Bind( wx.EVT_CHECKBOX, self.PlotEdgeCutsChanged )
 		self.ButtonCompare.Bind( wx.EVT_BUTTON, self.CompareBoards )
-		self.ButtonExportFiles.Bind( wx.EVT_BUTTON, self.ExportFiles )
 		self.ButtonOK.Bind( wx.EVT_BUTTON, self.OKClicked )
 
 	def __del__( self ):
@@ -211,9 +181,6 @@ class ComparisonOptionsDialog ( wx.Dialog ):
 
 	# Virtual event handlers, override them in your derived class
 	def OnClose( self, event ):
-		event.Skip()
-
-	def DialogInit( self, event ):
 		event.Skip()
 
 	def UploadOldFile( self, event ):
@@ -228,10 +195,10 @@ class ComparisonOptionsDialog ( wx.Dialog ):
 	def ComparisonMethodChanged( self, event ):
 		event.Skip()
 
-	def CompareBoards( self, event ):
+	def PlotEdgeCutsChanged( self, event ):
 		event.Skip()
 
-	def ExportFiles( self, event ):
+	def CompareBoards( self, event ):
 		event.Skip()
 
 	def OKClicked( self, event ):

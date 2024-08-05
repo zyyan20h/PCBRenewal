@@ -1,5 +1,5 @@
 # from svgpathtools import svg2paths, wsvg, Line, Path, parse_path
-from shapely import MultiPolygon, Polygon, LineString, Point, union_all, transform #  Go to Kicad Command prompt and type 'pip install shapely'
+from shapely import MultiPolygon, Polygon, LineString, MultiLineString, Point, union_all, transform #  Go to Kicad Command prompt and type 'pip install shapely'
 import pcbnew
 # from .pcb_components import PcbTrack, PcbPad, rotate_point
 import math
@@ -103,7 +103,7 @@ class NetShape:
         track_shapes = [ComponentShape(track, "track").outline for track in net.track_lst]
         component_shapes = pad_shapes + track_shapes
         self.outline = union_all(component_shapes)
-        print(f"num pads  = {len(pad_shapes)}")
+        # print(f"num pads  = {len(pad_shapes)}")
         # offset_shape = buffer(self.outline, offset)
         # self.offset_path = offset_shape.difference(self.outline)
         # a = int(1,2)
@@ -134,7 +134,7 @@ class ShapeCollection:
             # For when you already have shapely objects and you just want to store them in this class
             self.combined_net_paths = shape_collection
 
-        else:
+        elif net_list:
             net_shapes = [NetShape(net)for net in net_list]
             path_lst = [shape.offset_path for shape in net_shapes]
             outline_lst = [shape.outline for shape in net_shapes]
@@ -142,6 +142,9 @@ class ShapeCollection:
             # self.combined_net_paths = coverage_union_all(path_lst) 
             self.combined_net_paths = union_all(path_lst)
             self.combined_outlines = union_all(outline_lst)
+        
+        else:
+            self.combined_net_paths = MultiLineString()
 
         self.net_path_polygon = None
 
@@ -152,20 +155,43 @@ class ShapeCollection:
         # as_svg(diff, r"D:\KiCad\PCBS\renewablePCB\KiCAD_designs\bristleBot_V2\compare_result\test.svg")
         return ShapeCollection(shape_collection=diff)
 
-    def export_path(self, board, filename):
+    def export_path(self, board, filename, add_edge_cut=True):
         shape = self.combined_net_paths
-        board_start = board.edge.GetStart()
-        board_end = board.edge.GetEnd()
-        width = (board_end[0] - board_start[0]) / IU_PER_MM
-        height = (board_end[1] - board_start[1]) / IU_PER_MM
+        
+        # board_start = board.edge.GetStart()
+        # board_end = board.edge.GetEnd()
+        # width = (board_end[0] - board_start[0]) / IU_PER_MM
+        # height = (board_end[1] - board_start[1]) / IU_PER_MM
+
+        board_bb = board.board.GetBoundingBox()
+        bb_width = board_bb.GetWidth() / IU_PER_MM
+        bb_height = board_bb.GetHeight() / IU_PER_MM
+        board_topleft = pcbnew.VECTOR2I(board_bb.GetLeft(), board_bb.GetTop())
+
         # Move the board edge to 0,0
-        shape = transform(shape,lambda x: x - list(board_start))
+        shape = transform(shape,lambda x: x - list(board_topleft))
         shape = transform(shape, lambda x: x / IU_PER_MM)
         # edge_cut_d_string = f"M 0,0 L 0,{height} L {width},{height} L {width},0"
+
+        edge_svg_text = ""
+        # Adding edge sgapes
+        for shape_name, start, end, shape_ref in board.edge_cut_shapes:
+            if shape_name == "Rect":
+                width = (end[0] - start[0]) / IU_PER_MM
+                height = (end[1] - start[1]) / IU_PER_MM
+                x, y = (start - board.offset_vec - board_topleft) / IU_PER_MM
+                edge_svg_text += f'<rect width=\"{width}\" height=\"{height}\" x=\"{x}\" y=\"{y}\" stroke-width=\"{0.1}\" fill="none" stroke=\"black\"/>'
+            
+            elif shape_name == "Circle":
+                radius = (end - start).EuclideanNorm() // IU_PER_MM
+                x, y = (start - board.offset_vec - board_topleft) / IU_PER_MM
+                edge_svg_text += f'<circle r=\"{radius}\" cx=\"{x}\" cy=\"{y}\" stroke-width=\"{0.1}\" fill="none" stroke=\"black\"/>'
+            pass
+
         with open(filename, "w") as svg_file:
-            svg_text =  f'''<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 {width} {height}\" width=\"{width}mm\" height=\"{height}mm\">
-                    {shape.svg(scale_factor=self.offset / 2, stroke_color="#000000")}
-                    <rect width=\"{width}\" height=\"{height}\" stroke-width=\"{0.1}\" fill="none" stroke=\"black\"/> 
+            svg_text =  f'''<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 {bb_width} {bb_height}\" width=\"{bb_width}mm\" height=\"{bb_height}mm\">
+                    {shape.svg(scale_factor=self.offset / 2)}
+                    {edge_svg_text}
                     </svg>'''
             svg_file.write(svg_text)
 
@@ -182,7 +208,11 @@ class ShapeCollection:
         return poly_list
 
     def plot_in_kicad(self, board, layer):
-        shape_list = self.combined_net_paths.geoms
+        if type(self.combined_net_paths) == MultiLineString:
+            shape_list = self.combined_net_paths.geoms
+        else:
+            shape_list = [self.combined_net_paths]
+
         line_width = int(self.offset * IU_PER_MM)
         for shape in shape_list:
             ind = 0

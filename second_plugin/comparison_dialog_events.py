@@ -2,10 +2,13 @@ import wx
 from wx.lib.floatcanvas import NavCanvas, FloatCanvas
 # import wx.svg
 from .comparison_dialog_ui import ComparisonOptionsDialog
-from .pcb_components import PcbBoard, align_boards
+from .pcb_components import PcbBoard, get_offset, IU_PER_MM
 from .selection_dialog_events import ComponentSelectionDialog
 
 # TODO Maybe call layout locally instead of self.layout everywhere
+
+ALIGN_METHOD_CHOICES = ["None", "Edge", "Component"]
+ALIGN_CORNER_CHOICES = ["Top Left", "Top Right", "Bottom Right", "Bottom Left"]
 
 class BoardComparisonWindow(ComparisonOptionsDialog):
 
@@ -15,15 +18,45 @@ class BoardComparisonWindow(ComparisonOptionsDialog):
         self.old_board_path = None
         self.old_board = None
         self.new_board = None
-        self.align_corner = "topleft"
+        self.align_method = "None"
         self.comparison_method = "component"
         self.export_data = []
         self.log_sizer = None
 
-    def DialogInit(self, event):
-        sizer = self.PanelOperations.GetSizer()
+        self.DialogInit()
+
+    def DialogInit(self):
+        op_sizer = self.PanelOperations.GetSizer()
         self.board_vis = BoardVisPanel( self.PanelOperations, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, wx.TAB_TRAVERSAL )
-        sizer.Add(self.board_vis, 2, wx.EXPAND | wx.ALL, 5)
+        op_sizer.Add(self.board_vis, 2, wx.EXPAND | wx.ALL, 5)
+
+        align_sizer = wx.BoxSizer(wx.VERTICAL)
+        self.rbAlignMethod = wx.RadioBox(self.PanelAlignBoards, wx.ID_ANY,  \
+                                         "Align Method", choices=ALIGN_METHOD_CHOICES, style=wx.RA_SPECIFY_ROWS)
+        align_sizer.Add(self.rbAlignMethod)
+
+        self.choiceOldAlign = wx.Choice(self.PanelAlignBoards)
+        self.choiceNewAlign = wx.Choice(self.PanelAlignBoards)
+        choice_sizer = wx.BoxSizer(wx.VERTICAL)
+        choice_sizer.Add(self.choiceOldAlign)
+        choice_sizer.Add(self.choiceNewAlign)
+        align_sizer.Add(choice_sizer)
+
+        self.choiceAlignCorner = wx.Choice(self.PanelAlignBoards, choices=ALIGN_CORNER_CHOICES)
+        self.choiceAlignCorner.SetSelection(0)
+        align_sizer.Add(self.choiceAlignCorner)
+
+        self.buttonAlignBoards = wx.Button(self.PanelAlignBoards, label="Align")
+        self.buttonAlignBoards.Bind(wx.EVT_BUTTON, lambda event: self.UpdateBoardAlignment())
+        align_sizer.Add(self.buttonAlignBoards, flag=wx.ALIGN_RIGHT)
+
+        self.PanelAlignBoards.SetSizer(align_sizer)
+
+        self.choiceNewAlign.Hide()
+        self.choiceOldAlign.Hide()
+        self.choiceAlignCorner.Hide()
+
+        self.rbAlignMethod.Bind(wx.EVT_RADIOBOX, self.AlignMethodChanged)
 
         self.UseCurrentBoard(None)
         self.Layout()
@@ -35,6 +68,7 @@ class BoardComparisonWindow(ComparisonOptionsDialog):
         pass
 
     def OnClose(self, event):
+        self.DestroyChildren()
         self.Destroy()
     
     def AddToLog(self, log_text):
@@ -94,44 +128,22 @@ class BoardComparisonWindow(ComparisonOptionsDialog):
 
     def BoardChanged(self, board, is_new):
         edge_ind = 1 if is_new else 0
-        # if self.board_edges[edge_ind]:
-        # self.AlignCanvas.ClearAll()
         print("new_board_added", board.is_valid)
 
         if board.is_valid:
             print("new board is valid")
-            # board_start = board.edge.GetStart()
-            # board_end = board.edge.GetEnd()
-            # width = (board_end[0] - board_start[0]) 
-            # height = (board_end[1] - board_start[1]) 
-            # self.board_edges[edge_ind] = self.AlignCanvas.AddRectangle(board_start, (width, height), LineColor="#DDDDDD")
-
-            # self.AlignCanvas.Draw()
-            # self.AlignCanvas.ZoomToBB()
             self.board_vis.PlotBoard(board, "New Board" if is_new else "Old Board")
+            
+            self.UpdateAlignChoices()
+            self.UpdateBoardAlignment()
 
     def UpdateCompLayers(self):
-
-
         self.all_layers = self.old_board.get_layers()
 
-        # all_layers = ["1","2","3","4"]
-
-        # b = PcbBoard(board=None, path=self.OpenFileDialog())
-        # all_layers = b.get_layers()
-
-        # layer_sizer = self.PanelCompLayers.GetSizer()
-        # layer_sizer = wx.BoxSizer(orient=wx.VERTICAL)
-        
         self.listBoxCompLayers.Clear()
 
         for layer in self.all_layers:
-            # new_cb = wx.CheckBox(self.PanelCompLayers, wx.ID_ANY, layer, wx.DefaultPosition, wx.DefaultSize, 0)
-            # layer_sizer.Add(new_cb, 1, wx.ALL, 5)
-
             self.listBoxCompLayers.Append(layer)
-
-        # self.PanelCompLayers.SetSizer(layer_sizer)
 
     def ComparisonMethodChanged(self, event):
         choices = ["component", "line", "hybrid"]
@@ -143,7 +155,6 @@ class BoardComparisonWindow(ComparisonOptionsDialog):
         self.Hide()
         selection_result = ComponentSelectionDialog(self).Show()   
 
-
     def HandleEdgeSelected(self):
         new_edge_corner = self.new_board.change_edge()
         if new_edge_corner:
@@ -154,10 +165,90 @@ class BoardComparisonWindow(ComparisonOptionsDialog):
         self.AddToLog(log_message)
         # self.AddToLog(str(self.new_board.edge))
 
-    def AlignCornerChanged(self, event):
-        choices = ["topleft", "bottomleft", "topright", "bottomright"]
-        index = self.rbAlignCorner.GetSelection()
-        self.align_corner = choices[index]
+    def AlignMethodChanged(self, event):
+        index = self.rbAlignMethod.GetSelection()
+        self.align_method= ALIGN_METHOD_CHOICES[index]
+
+        if self.align_method == "None":
+            self.choiceAlignCorner.Hide()
+            self.choiceNewAlign.Hide()
+            self.choiceOldAlign.Hide()
+
+        elif self.align_method == "Edge":
+            self.choiceAlignCorner.Show()
+            self.choiceNewAlign.Show()
+            self.choiceOldAlign.Show()
+
+        elif self.align_method == "Component":
+            self.choiceAlignCorner.Hide()
+            self.choiceNewAlign.Show()
+            self.choiceOldAlign.Show() 
+
+        self.UpdateAlignChoices()
+        self.Layout()
+
+    def UpdateAlignChoices(self):
+        new_board_choices = []
+        old_board_choices = []
+        old_selection = self.choiceOldAlign.GetCurrentSelection()
+        new_selection = self.choiceNewAlign.GetCurrentSelection()
+        self.choiceOldAlign.Clear()
+        self.choiceNewAlign.Clear()
+
+        if self.align_method == "None":
+            return
+
+        elif self.align_method == "Edge":              
+            if self.old_board and self.old_board.is_valid:
+                for name, pos, _, _ in self.old_board.edge_cut_shapes:
+                    old_board_choices.append(f"{name} at ({pos[0]//IU_PER_MM}, {pos[1]//IU_PER_MM})")
+
+            if self.new_board and self.new_board.is_valid:
+                for name, pos, _, _ in self.new_board.edge_cut_shapes:
+                    new_board_choices.append(f"{name} at ({pos[0]//IU_PER_MM}, {pos[1]//IU_PER_MM})")
+
+        elif self.align_method == "Component":
+            if self.old_board and self.old_board.is_valid:
+                for name, pos, _ in self.old_board.footprint_names:
+                    old_board_choices.append(f"{name} at ({pos[0]//IU_PER_MM}, {pos[1]//IU_PER_MM})")
+
+            if self.new_board and self.new_board.is_valid:
+                for name, pos, _ in self.new_board.footprint_names:
+                    new_board_choices.append(f"{name} at ({pos[0]//IU_PER_MM}, {pos[1]//IU_PER_MM})")
+
+        self.choiceOldAlign.AppendItems(old_board_choices)
+        self.choiceOldAlign.SetSelection(old_selection)
+
+        self.choiceNewAlign.AppendItems(new_board_choices)
+        self.choiceNewAlign.SetSelection(new_selection)
+
+    def UpdateBoardAlignment(self):
+        if (not self.old_board) or (not self.new_board):
+            return 
+        
+        if self.align_method == "None":
+            self.old_board.reset_offset()
+            self.board_vis.ResetBoard("Old Board")
+        
+        else:
+            old_choice_ind = self.choiceOldAlign.GetCurrentSelection()
+            new_choice_ind = self.choiceNewAlign.GetCurrentSelection()
+            
+            print(f"indices for alignment are {old_choice_ind} and {new_choice_ind}")
+
+            if self.align_method == "Edge":
+                corner_name = ALIGN_CORNER_CHOICES[self.choiceAlignCorner.GetCurrentSelection()]
+                offset_vec = get_offset(self.new_board, self.old_board, 
+                                          old_edge_ind=old_choice_ind, new_edge_ind=new_choice_ind, corner_name=corner_name)
+
+            elif self.align_method == "Component":
+                offset_vec = get_offset(self.new_board, self.old_board, 
+                                          old_component_ind=old_choice_ind, new_component_ind=new_choice_ind)
+            
+            self.board_vis.OffsetBoard("Old Board", offset_vec)
+            self.old_board.offset(offset_vec)
+            self.UpdateAlignChoices()
+            self.AddToLog("Boards aligned")
 
     def CompareBoards(self, event):
         # First get the layers selected
@@ -166,12 +257,10 @@ class BoardComparisonWindow(ComparisonOptionsDialog):
         if len(selected_layers) < 1:
             return
 
-        self.PanelExportFiles.DestroyChildren()
-
         # Aligning the boards
         # self.AddToLog("Before aligning " + str(self.new_board.edge.GetStart()))
-        align_boards(self.new_board, self.old_board, corner_name=self.align_corner)
-        self.AddToLog("Boards aligned")
+        # align_boards(self.new_board, self.old_board, corner_name=self.align_corner)
+        # self.AddToLog("Boards aligned")
         # self.AddToLog("After aligning " + str(self.new_board.edge.GetStart()))
 
         #Convert from indexes to layer names
@@ -185,22 +274,11 @@ class BoardComparisonWindow(ComparisonOptionsDialog):
         
 
     def ExportFiles(self, event):
-
-        # file_names = []
-
-        # # Getting the files that are checked to export
-        # for layer in self.export_data:
-        #     if layer["checkbox"].IsChecked():
-        #         file_names.append((layer["textctrl"].GetValue(), layer["id"]))
-
         self.new_board.export_files()
         self.AddToLog(f"Files exported to {self.new_board.comp_folder_path}")
         pass
 
     def OKClicked(self, event):
-        # Making sure a file has been selected
-        # if self.old_board_path != None:
-        #     self.EndModal(wx.ID_OK)
         self.new_board.open_disp_board()
         self.Close()
         pass
@@ -215,6 +293,10 @@ def YDownProjection(CenterPoint):
     return N.array((1,-1))
 
 BACKGROUND_COLOR = "#000020"
+BOARD_COLORS = {"Old Board":{"F.Cu":"#DD1010", "B.Cu":"#2f2fad", "Edge.Cuts":"#DDDDDD"},
+                "New Board":{"F.Cu":"#fa377b", "B.Cu":"#52b8f2", "Edge.Cuts":"#DDDDDD"},
+                "Stuff to be Erased":{"F.Cu":"#eb4a05", "B.Cu":"#0a8008", "Edge.Cuts":"#DDDDDD"},
+                "Stuff to be Written":{"F.Cu":"#ffc021", "B.Cu":"#0bd439", "Edge.Cuts":"#DDDDDD"}}
 class BoardVisPanel(wx.Panel):
     def __init__(self, *args, **kw):
         super().__init__(*args, **kw)
@@ -228,6 +310,13 @@ class BoardVisPanel(wx.Panel):
         # nc = FloatCanvas.FloatCanvas(self, ProjectionFun=None, Debug=0, BackgroundColor="#000020")
         sizer.Add(nc, 1, wx.EXPAND | wx.ALL, 5)
         self.canvas = nc.Canvas
+        
+        toolbar = nc.ToolBar
+        toolbar.AddSeparator()
+        self.coords_text = wx.StaticText(toolbar)
+        toolbar.AddControl(self.coords_text)
+        toolbar.Realize()
+        # sizer.Add(self.coords_text,0)
 
         # button = wx.Button(self, wx.ID_ANY, "test")
         # sizer.Add(button)
@@ -238,9 +327,31 @@ class BoardVisPanel(wx.Panel):
         sizer.Add(self.layer_control_sizer)
         self.board_properties = dict()
         
+        self.canvas.Bind(FloatCanvas.EVT_MOTION, self.OnMove)
+
         self.canvas.Draw(True)
         self.canvas.ZoomToBB()
         # self.Layout()
+
+    def ResetBoard(self, board_name):
+        if not (board_name in self.board_properties):
+            return
+        
+        if "offset" in self.board_properties[board_name]:
+            self.OffsetBoard(board_name, -self.board_properties[board_name]["offset"])
+
+    def OffsetBoard(self, board_name, vector):
+        if not ("offset" in self.board_properties[board_name]):
+            self.board_properties[board_name]["offset"] = vector
+        else:
+            self.board_properties[board_name]["offset"] += vector
+
+        for layer in self.boards[board_name]:
+            for shape in self.boards[board_name][layer]:
+                shape.Move(vector)
+
+        self.canvas.ZoomToBB()
+        self.canvas.Draw(True)
 
     def PlotBoard(self, board, board_name, net_dict=None, path_dict=None):
         print("plotting board")
@@ -262,14 +373,19 @@ class BoardVisPanel(wx.Panel):
                 self.boards[board_name][layer] = []
                 for net in net_dict[layer]:
                     for pad in net.pad_lst:
-                        pad_shape = self.canvas.AddPolygon(pad.poly_points, LineStyle="Transparent", FillStyle="Solid", FillColor="#DD1010")
+                        if len(pad.poly_points) == 0:
+                            break
+                        pad_shape = self.canvas.AddPolygon(pad.poly_points, LineStyle="Transparent", 
+                                                           FillStyle="Solid", FillColor=BOARD_COLORS[board_name][layer])
                         self.boards[board_name][layer].append(pad_shape)
 
                     for track in net.track_lst:
                         shape = ComponentShape(track, "track")
                         point_lst = shape.outline.exterior.coords
-                        # track_shape = self.canvas.AddLine((track.start, track.end), LineColor="#DD1010")
-                        track_shape = self.canvas.AddPolygon(point_lst, LineStyle="Transparent", FillStyle="Solid", FillColor="#DD1010")
+                        if len(point_lst) == 0:
+                            break
+                        track_shape = self.canvas.AddPolygon(point_lst, LineStyle="Transparent", 
+                                                             FillStyle="Solid", FillColor=BOARD_COLORS[board_name][layer])
                         self.boards[board_name][layer].append(track_shape)
 
         else:
@@ -279,7 +395,9 @@ class BoardVisPanel(wx.Panel):
                 polygons = path.get_poly_list()
                 for polygon in polygons:
                     ext_point_lst = polygon.exterior.coords
-                    shape = self.canvas.AddPolygon(ext_point_lst, LineStyle="Transparent", FillStyle="Solid", FillColor="#32a852")
+                    if len(ext_point_lst) == 0:
+                            break
+                    shape = self.canvas.AddPolygon(ext_point_lst, LineStyle="Transparent", FillStyle="Solid", FillColor=BOARD_COLORS[board_name][layer])
                     self.boards[board_name][layer].append(shape)
 
                     # As far as I know, you cannot natively add holes into polygons
@@ -287,6 +405,8 @@ class BoardVisPanel(wx.Panel):
                     # Might be worth looking into if simply appending the hole points to the exterior points
                     # Will create a hole
                     for hole in polygon.interiors:
+                        if len(hole.coords) == 0:
+                            break
                         hole_shape = self.canvas.AddPolygon(hole.coords, LineStyle="Transparent", FillStyle="Solid", FillColor=BACKGROUND_COLOR)
                         self.boards[board_name][layer].append(hole_shape)
        
@@ -326,12 +446,17 @@ class BoardVisPanel(wx.Panel):
         self.board_properties[board_name]["layer sizer"] = check_box_container
         self.layer_control_sizer.Add(check_box_container, 1, wx.EXPAND | wx.ALL, 5)
         for layer in self.boards[board_name]:
+            cb_sizer = wx.BoxSizer(wx.HORIZONTAL)
+            color_circle = wx.StaticText(self, label="⬤ ")
+            color_circle.SetForegroundColour(BOARD_COLORS[board_name][layer])
             check_box = wx.CheckBox(self, wx.ID_ANY, layer)
             check_box.SetValue(True)
+            cb_sizer.Add(check_box)
+            cb_sizer.Add(color_circle)
             layer_change_function = \
                 lambda event, cb=check_box, l=layer: self.ChangeLayerVisibility(board_name, l, cb.IsChecked())
             check_box.Bind(wx.EVT_CHECKBOX, layer_change_function)
-            check_box_container.Add(check_box)
+            check_box_container.Add(cb_sizer)
 
         self.Layout()
 
@@ -351,4 +476,15 @@ class BoardVisPanel(wx.Panel):
                     component.Hide()
 
         self.canvas.Draw(True)
+
+    # From https://github.com/wxWidgets/Phoenix/blob/master/samples/floatcanvas/DrawRect.py
+    # But slightly edited
+    def OnMove(self, event):
+        """
+        Updates the status bar with the world coordinates
+
+        """
+        coords_in_mm = (event.Coords[0]/IU_PER_MM, event.Coords[1]/IU_PER_MM)
+        self.coords_text.SetLabel("%.4f, %.4f"%coords_in_mm)
+        event.Skip()
 

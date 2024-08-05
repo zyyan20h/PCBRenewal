@@ -40,20 +40,30 @@ def offset_polygon(polygon, offset):
 
     return new_polygon
 
-def align_boards(new_board, old_board, corner_name=None, component=None):
-    if not new_board.edge:
-        new_board.set_default_edge()
-    if not old_board.edge:
-        old_board.set_default_edge()
+def get_offset(new_board, old_board, old_edge_ind=-1, new_edge_ind=-1, corner_name=None, 
+                 old_component_ind=-1, new_component_ind=-1):
+    # if not new_board.edge:
+    #     new_board.set_default_edge()
+    # if not old_board.edge:
+    #     old_board.set_default_edge()
+
+    offset_vector = pcbnew.VECTOR2I(0,0)
+    print(f"dealing with components {old_component_ind} and {new_component_ind}")
 
     if corner_name:
-        new_corner = new_board.get_corner(corner_name)
-        old_corner = old_board.get_corner(corner_name)
+        new_edge = new_board.edge_cut_shapes[new_edge_ind]
+        old_edge = old_board.edge_cut_shapes[old_edge_ind]
+        new_corner = new_board.get_corner(corner_name, new_edge)
+        old_corner = old_board.get_corner(corner_name, old_edge)
         offset_vector = new_corner - old_corner
 
-        if offset_vector != pcbnew.VECTOR2I(0,0):
-            old_board.offset(offset_vector)
-    pass    
+    elif old_component_ind >= 0 and new_component_ind >= 0:
+        _, new_pos, new_component = new_board.footprint_names[new_component_ind]
+        _, old_pos, old_component = old_board.footprint_names[old_component_ind]
+        offset_vector = new_pos - old_pos
+        pass
+    
+    return offset_vector
 
 # Will only work on the board the plugin is run on
 def get_selection():
@@ -352,12 +362,10 @@ class PcbBoard():
             board = pcbnew.GetBoard()
             print("board in pcbboard:", board)
             if not board:
-                print("kill me")
                 self.is_valid = False
                 return
         else:
             board = pcbnew.LoadBoard(path)
-        print("what is happening")
         self.board = board
         
         track_lst = filter(lambda x: type(x) == pcbnew.PCB_TRACK, board.GetTracks())
@@ -368,8 +376,12 @@ class PcbBoard():
         self.net_dict = dict()
         self.gnd_nets = []
 
+        self.footprint_names = [(f.GetFPIDAsString(), f.GetPosition(), f) for f in board.GetFootprints()]
+        self.offset_vec = pcbnew.VECTOR2I(0,0)
+
         self.holes = []
         self.edge = get_selection()
+        self.edge_cut_shapes = None
 
         self.export_board = None
         self.disp_board = None
@@ -393,11 +405,22 @@ class PcbBoard():
         self.add_holes()
 
     def offset(self, offset):
+        if offset == pcbnew.VECTOR2I(0,0):
+            return
+        
+        self.offset_vec += offset
         for track in self.track_lst:
             track.offset(offset)
         for pad in self.pad_lst:
             pad.offset(offset)
+
+        self.edge_cut_shapes = [(name, start + offset, end + offset, edge) for (name, start, end, edge) in self.edge_cut_shapes]
+        self.footprint_names = [(name, pos + offset, f) for (name, pos, f) in self.footprint_names]
+        print("updated offsets and footprint positions")
         pass
+
+    def reset_offset(self):
+        self.offset(-self.offset_vec)
 
     def change_edge(self):
         new_edge = get_selection()
@@ -434,21 +457,29 @@ class PcbBoard():
 
                 self.net_dict[layer][net_name].add(component)
 
-    def get_corner(self, corner_name):
-        topleft = self.edge.GetStart()
-        botright = self.edge.GetEnd()
+    def get_corner(self, corner_name, edge_shape=None):
+        if edge_shape:
+            _, topleft, botright, edge = edge_shape
+            # Trying to align with bounding box instead of othe rstuff
+            bb = edge.GetBoundingBox()
+            topleft = pcbnew.VECTOR2I(bb.GetLeft(), bb.GetTop()) + self.offset_vec
+            botright = pcbnew.VECTOR2I(bb.GetRight(), bb.GetBottom()) + self.offset_vec
+        else:
+            topleft = self.edge.GetStart()
+            botright = self.edge.GetEnd()
+
         corner = pcbnew.VECTOR2I(0,0)
 
-        if "top" in corner_name:
+        if "Top" in corner_name:
             corner[1] = topleft[1]
         else:
             corner[1] = botright[1]
 
-        if "left" in corner_name:
+        if "Left" in corner_name:
             corner[0] = topleft[0]
         else:
             corner[0] = botright[0]
-
+        print(corner_name, corner)
         return corner
         pass
 
@@ -494,7 +525,7 @@ class PcbBoard():
         path_dict = dict()
         
         for layer in selected_layers:
-            if layer in self.net_dict:
+            if layer in net_dict:
                 path_dict[layer] = ShapeCollection(net_list=net_dict[layer])
 
         return path_dict
