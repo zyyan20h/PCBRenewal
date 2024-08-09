@@ -1,0 +1,37 @@
+<!-- Complete project details: https://randomnerdtutorials.com/esp8266-nodemcu-web-server-websocket-sliders/ -->
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>ESP IOT DASHBOARD</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=0">
+    <link rel="icon" type="image/png" href="favicon.png">
+    <link rel="stylesheet" type="text/css" href="style.css">
+</head>
+<body>
+    <div class="topnav">
+        <h1>Camera Roller Control</h1>
+    </div>
+    <div class="content">
+        <div class="card-grid">
+            <div class="card">
+                <p class="card-title">DIRECTION</p>
+                <button class="button" onmousedown="toggleCheckbox(this, 'on');" ontouchstart="toggleCheckbox(this, 'on');" onmouseup="toggleCheckbox(this, 'off');" ontouchend="toggleCheckbox(this, 'off');" id="left">LEFT </button>
+                <button class="button" onmousedown="toggleCheckbox(this, 'on');" ontouchstart="toggleCheckbox(this, 'on');" onmouseup="toggleCheckbox(this, 'off');" ontouchend="toggleCheckbox(this, 'off');" id="right">RIGHT</button>
+                <p>       </p>
+            </div>
+            <div class="card">
+                <p class="card-title">ROLLING MOVEMENT</p>
+                <p class="switch">
+                    <input type="range" onchange="updateSliderPWM(this)" id="slider1" min="0" max="100" step="1" value ="0" class="slider">
+                </p>
+                <p class="state">Brightness: <span id="sliderValue1"></span> &percnt;</p>
+                <button class="button" onmousedown="toggleCheckbox(this, 'on');" ontouchstart="toggleCheckbox(this, 'on');" onmouseup="toggleCheckbox(this, 'off');" ontouchend="toggleCheckbox(this, 'off');" id="forward">FORWARD </button>
+                <button class="button" onmousedown="toggleCheckbox(this, 'on');" ontouchstart="toggleCheckbox(this, 'on');" onmouseup="toggleCheckbox(this, 'off');" ontouchend="toggleCheckbox(this, 'off');" id="backward">BACKWARD</button>
+                <p>       </p>
+            </div>
+        </div>
+    </div>
+    <script src="script.js"></script>
+</body>
+</html>

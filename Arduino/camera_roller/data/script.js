@@ -49,3 +49,13 @@ function onMessage(event) {
         document.getElementById("slider"+ (i+1).toString()).value = myObj[key];
     }
 }
+
+function toggleCheckbox(element, x) {
+    var buttonID = element.id;
+    if (x === 'on') {
+        websocket.send(buttonID +"ON");
+    }
+    if (x === 'off') {
+        websocket.send(buttonID +"OFF");
+    }
+  }
