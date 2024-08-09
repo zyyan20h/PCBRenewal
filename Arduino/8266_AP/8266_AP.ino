@@ -4,8 +4,8 @@
 #include <Hash.h>
 
 
-const char* ssid     = "ESP8266-Access-Point";
-const char* password = "123456789";
+const char* ssid     = "esp8266_ap";
+const char* password = "esp8266_ap";
 
 // Create AsyncWebServer object on port 80
 

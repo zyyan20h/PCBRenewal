@@ -406,7 +406,7 @@
     "pinned_symbol_libs": []
   },
   "meta": {
-    "filename": "esp_espboy.kicad_pro",
+    "filename": "esp_boyBot.kicad_pro",
     "version": 1
   },
   "net_settings": {
@@ -451,7 +451,7 @@
       "idf": "",
       "netlist": "",
       "specctra_dsn": "",
-      "step": "esp_espboy.step",
+      "step": "esp_boyBot.step",
       "vrml": ""
     },
     "page_layout_descr_file": ""
