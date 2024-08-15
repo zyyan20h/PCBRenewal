@@ -31,6 +31,9 @@ const int ledPin1 = 14;
 const int ledPin2 = 12;
 const int ledPin3 = 13;
 
+const int light1 = 5;
+const int light2 = 4;
+
 String message = "";
 String sliderValue1 = "0";
 //String sliderValue2 = "0";
@@ -94,42 +97,48 @@ void handleWebSocketMessage(void *arg, uint8_t *data, size_t len) {
     }
     if (message.indexOf("left") >= 0 && message.indexOf("ON") >= 0) {
       Serial.println("left on");
+      digitalWrite(light1, LOW);
       digitalWrite(ledPin2, HIGH);
     }
     if (message.indexOf("right") >= 0 && message.indexOf("ON") >= 0) {
       Serial.println("right on");
+      digitalWrite(light1, LOW);
       digitalWrite(ledPin3, HIGH);
     }
     if (message.indexOf("left") >= 0 && message.indexOf("OFF") >= 0) {
       Serial.println("left off");
+      digitalWrite(light1, HIGH);
       digitalWrite(ledPin2, LOW);
     }
     if (message.indexOf("right") >= 0 && message.indexOf("OFF") >= 0) {
       Serial.println("right off");
+      digitalWrite(light1, HIGH);
       digitalWrite(ledPin3, LOW);
     }
     if (message.indexOf("forward") >= 0 && message.indexOf("ON") >= 0) {
       Serial.print("forward: ");
       Serial.println(dutyCycle1);
+      digitalWrite(light2, LOW);
       analogWrite(ledPin1, dutyCycle1);
-//      digitalWrite(ledPin3, LOW);
     }
     if (message.indexOf("forward") >= 0 && message.indexOf("OFF") >= 0) {
       Serial.print("forward: ");
       Serial.println(dutyCycle1);
+      digitalWrite(light2, HIGH);
 //      analogWrite(ledPin1, dutyCycle1);
       digitalWrite(ledPin1, LOW);
     }
     if (message.indexOf("backward") >= 0 && message.indexOf("ON") >= 0) {
       Serial.print("backward: ");
       Serial.println(dutyCycle1);
+      digitalWrite(light2, LOW);
       analogWrite(ledPin0, dutyCycle1);
-//      digitalWrite(ledPin3, LOW);
+
     }
     if (message.indexOf("backward") >= 0 && message.indexOf("OFF") >= 0) {
       Serial.print("backward: ");
       Serial.println(dutyCycle1);
-//      analogWrite(ledPin1, dutyCycle1);
+      digitalWrite(light2, HIGH);
       digitalWrite(ledPin0, LOW);
     }
 //    if (message.indexOf("2s") >= 0) {
@@ -179,6 +188,10 @@ void setup() {
   pinMode(ledPin1, OUTPUT);
   pinMode(ledPin2, OUTPUT);
   pinMode(ledPin3, OUTPUT);
+  pinMode(light1, OUTPUT);
+  pinMode(light2, OUTPUT);
+  digitalWrite(light1, HIGH);
+  digitalWrite(light2, HIGH);
   initFS();
   initWiFi();
 
