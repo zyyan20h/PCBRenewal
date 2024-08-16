@@ -155,13 +155,9 @@ class ShapeCollection:
         # as_svg(diff, r"D:\KiCad\PCBS\renewablePCB\KiCAD_designs\bristleBot_V2\compare_result\test.svg")
         return ShapeCollection(shape_collection=diff)
 
-    def export_path(self, board, filename, add_edge_cut=True):
-        shape = self.combined_net_paths
-        
-        # board_start = board.edge.GetStart()
-        # board_end = board.edge.GetEnd()
-        # width = (board_end[0] - board_start[0]) / IU_PER_MM
-        # height = (board_end[1] - board_start[1]) / IU_PER_MM
+    def export_path(self, board, filename, add_edge_cut=True, is_stencil=False):
+        # shape = self.combined_net_paths
+        shape = self.polygonize_paths()
 
         board_bb = board.board.GetBoundingBox()
         bb_width = board_bb.GetWidth() / IU_PER_MM
@@ -190,15 +186,28 @@ class ShapeCollection:
 
         with open(filename, "w") as svg_file:
             svg_text =  f'''<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 {bb_width} {bb_height}\" width=\"{bb_width}mm\" height=\"{bb_height}mm\">
-                    {shape.svg(scale_factor=self.offset / 2)}
-                    {edge_svg_text}
+                    <g stroke-linecap=\"round\" fill-rule=\"{"evenodd" if is_stencil else "nonzero"}\">
+                        {shape.svg(scale_factor=0, opacity=1)}
+                        {edge_svg_text}
+                    </g>
                     </svg>'''
             svg_file.write(svg_text)
+
+    def polygonize_paths(self):
+        if not self.net_path_polygon:
+            self.net_path_polygon = self.combined_net_paths.buffer((self.offset/2 ) * IU_PER_MM)
+        
+        return self.net_path_polygon
+
+
+    def get_path_length(self):
+        return self.combined_net_paths.length
 
     # Returns list of polygons created out of paths
     def get_poly_list(self):
         if not self.net_path_polygon:
-            self.net_path_polygon = self.combined_net_paths.buffer((self.offset/2 ) * IU_PER_MM)
+            # self.net_path_polygon = self.combined_net_paths.buffer((self.offset/2 ) * IU_PER_MM)
+            self.polygonize_paths()
         
         if type(self.net_path_polygon) == MultiPolygon:
             poly_list = self.net_path_polygon.geoms

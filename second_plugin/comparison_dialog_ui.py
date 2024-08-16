@@ -147,8 +147,16 @@ class ComparisonOptionsDialog ( wx.Dialog ):
 
 		bSizer4.Add( self.PanelLog, 0, wx.ALL|wx.EXPAND, 5 )
 
+		bSizer21 = wx.BoxSizer( wx.HORIZONTAL )
+
+		self.ButtonAnalysis = wx.Button( self.PanelAll, wx.ID_ANY, u"Run Analysis", wx.DefaultPosition, wx.DefaultSize, 0 )
+		bSizer21.Add( self.ButtonAnalysis, 0, wx.ALL, 5 )
+
 		self.ButtonOK = wx.Button( self.PanelAll, wx.ID_ANY, u"OK", wx.DefaultPosition, wx.DefaultSize, 0 )
-		bSizer4.Add( self.ButtonOK, 0, wx.ALL|wx.ALIGN_RIGHT, 5 )
+		bSizer21.Add( self.ButtonOK, 0, wx.ALL, 5 )
+
+
+		bSizer4.Add( bSizer21, 0, wx.ALIGN_RIGHT, 5 )
 
 
 		bSizer14.Add( bSizer4, 1, wx.EXPAND, 5 )
@@ -173,6 +181,7 @@ class ComparisonOptionsDialog ( wx.Dialog ):
 		self.rbCompMethod.Bind( wx.EVT_RADIOBOX, self.ComparisonMethodChanged )
 		self.cbPlotEdgeCuts.Bind( wx.EVT_CHECKBOX, self.PlotEdgeCutsChanged )
 		self.ButtonCompare.Bind( wx.EVT_BUTTON, self.CompareBoards )
+		self.ButtonAnalysis.Bind( wx.EVT_BUTTON, self.RunAnalysis )
 		self.ButtonOK.Bind( wx.EVT_BUTTON, self.OKClicked )
 
 	def __del__( self ):
@@ -199,6 +208,9 @@ class ComparisonOptionsDialog ( wx.Dialog ):
 		event.Skip()
 
 	def CompareBoards( self, event ):
+		event.Skip()
+
+	def RunAnalysis( self, event ):
 		event.Skip()
 
 	def OKClicked( self, event ):

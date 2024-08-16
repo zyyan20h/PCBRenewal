@@ -711,10 +711,11 @@ class PcbBoard():
 
         return new_board
 
-    def plot_paths(self, path_dict, layer_dict, plot_board, mode):
+    def plot_paths(self, path_dict, layer_dict, board, plot_board, mode):
         for layer in path_dict:
             path_dict[layer].plot_in_kicad(plot_board, layer_dict[mode][layer])
-            path_dict[layer].export_path(self, os.path.join(self.comp_folder_path, f"{mode}_{layer}.svg"))
+            path_dict[layer].export_path(board, os.path.join(self.comp_folder_path, f"{mode}_{layer}.svg"), 
+                                         is_stencil=(mode=="erase"))
 
     def compare_and_plot(self, old_board, selected_layers= None, compare_paths="component"):
         print(f"start of comparinf, method is {compare_paths}")
@@ -746,9 +747,6 @@ class PcbBoard():
             self.disp_board = self.create_board_copy("comparison")
             self.export_board = self.disp_board
 
-            self.plot_paths(erase_paths, layer_dict, self.disp_board, "erase")
-            self.plot_paths(write_paths, layer_dict, self.disp_board, "write")
-
         elif compare_paths == "component":
             print("about to compare components")         
             erase_nets, write_nets = self.compare_nets(old_board, selected_layers)
@@ -764,10 +762,6 @@ class PcbBoard():
             erase_paths = self.create_path_dict(erase_nets, selected_layers)
             write_paths = self.create_path_dict(write_nets, selected_layers)
 
-            # Plotting them on the boards that will be displayed to the user
-            self.plot_paths(erase_paths, layer_dict, self.disp_board, "erase")
-            self.plot_paths(write_paths, layer_dict, self.disp_board, "write")
-
         elif compare_paths == "hybrid":
             print("hybird")
             erase_nets, write_nets = self.compare_nets(old_board, selected_layers)
@@ -778,9 +772,11 @@ class PcbBoard():
             erase_paths, write_paths = self.compare_paths(old_board=old_board, selected_layers=selected_layers, \
                                                           new_net_dict=write_nets, old_net_dict=erase_nets)
 
-            # Plotting them on the boards that will be displayed to the user
-            self.plot_paths(erase_paths, layer_dict, self.disp_board, "erase")
-            self.plot_paths(write_paths, layer_dict, self.disp_board, "write")
+        self.plot_paths(path_dict=erase_paths, layer_dict=layer_dict, 
+                            board=old_board, plot_board=self.disp_board, mode="erase")
+            
+        self.plot_paths(path_dict=write_paths, layer_dict=layer_dict, 
+                            board=self,plot_board=self.disp_board, mode="write")
 
         if erase_holes:
             self.plot_holes(erase_holes, self.export_board, "erase")

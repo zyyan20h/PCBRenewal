@@ -4,11 +4,15 @@ from wx.lib.floatcanvas import NavCanvas, FloatCanvas
 from .comparison_dialog_ui import ComparisonOptionsDialog
 from .pcb_components import PcbBoard, get_offset, IU_PER_MM
 from .selection_dialog_events import ComponentSelectionDialog
+from .comp_analysis_events import CompAnalysisDialog
 
 # TODO Maybe call layout locally instead of self.layout everywhere
 
 ALIGN_METHOD_CHOICES = ["None", "Edge", "Component"]
 ALIGN_CORNER_CHOICES = ["Top Left", "Top Right", "Bottom Right", "Bottom Left"]
+
+ERASE_NAME = "Stuff to be Erased"
+WRITE_NAME = "Stuff to be Written"
 
 class BoardComparisonWindow(ComparisonOptionsDialog):
 
@@ -18,6 +22,8 @@ class BoardComparisonWindow(ComparisonOptionsDialog):
         self.old_board_path = None
         self.old_board = None
         self.new_board = None
+        self.erase_paths = None
+        self.write_paths = None
         self.align_method = "None"
         self.comparison_method = "component"
         self.export_data = []
@@ -268,14 +274,23 @@ class BoardComparisonWindow(ComparisonOptionsDialog):
 
         erase_paths, write_paths = self.new_board.compare_and_plot(self.old_board, selected_layers, compare_paths=self.comparison_method)
         self.AddToLog("Boards compared")
-
-        self.board_vis.PlotBoard(self.new_board, "Stuff to be Erased", path_dict=erase_paths)
-        self.board_vis.PlotBoard(self.new_board, "Stuff to be Written", path_dict=write_paths)
+        self.erase_paths = erase_paths
+        self.write_paths = write_paths
+        self.board_vis.PlotBoard(self.new_board, ERASE_NAME, path_dict=erase_paths)
+        self.board_vis.PlotBoard(self.new_board, WRITE_NAME, path_dict=write_paths)
         
 
     def ExportFiles(self, event):
         self.new_board.export_files()
         self.AddToLog(f"Files exported to {self.new_board.comp_folder_path}")
+        pass
+
+    def RunAnalysis(self, event):
+        self.comp_dialog = CompAnalysisDialog(self.old_board, self.new_board, self.erase_paths, self.write_paths)
+        # self.comp_dialog.ShowModal()
+        text = self.comp_dialog.CalcResources()
+        self.comp_dialog.Destroy()
+        self.AddToLog(text)
         pass
 
     def OKClicked(self, event):
@@ -295,8 +310,12 @@ def YDownProjection(CenterPoint):
 BACKGROUND_COLOR = "#000020"
 BOARD_COLORS = {"Old Board":{"F.Cu":"#DD1010", "B.Cu":"#2f2fad", "Edge.Cuts":"#DDDDDD"},
                 "New Board":{"F.Cu":"#fa377b", "B.Cu":"#52b8f2", "Edge.Cuts":"#DDDDDD"},
-                "Stuff to be Erased":{"F.Cu":"#eb4a05", "B.Cu":"#0a8008", "Edge.Cuts":"#DDDDDD"},
-                "Stuff to be Written":{"F.Cu":"#ffc021", "B.Cu":"#0bd439", "Edge.Cuts":"#DDDDDD"}}
+                ERASE_NAME:{"F.Cu":"#eb4a05", "B.Cu":"#0a8008", "Edge.Cuts":"#DDDDDD"},
+                WRITE_NAME:{"F.Cu":"#ffc021", "B.Cu":"#0bd439", "Edge.Cuts":"#DDDDDD"}}
+
+board_disp_order = ["New Board", "Old Board", WRITE_NAME, ERASE_NAME]
+layer_disp_order = ["F.Cu", "B.Cu", "Edge.Cuts"]
+
 class BoardVisPanel(wx.Panel):
     def __init__(self, *args, **kw):
         super().__init__(*args, **kw)
@@ -425,6 +444,7 @@ class BoardVisPanel(wx.Panel):
             self.boards[board_name]["Edge.Cuts"].append(shape)
 
         self.AddBoardLayerControls(board_name)
+        self.SetDisplayOrder()
         self.canvas.Draw(True)
         self.canvas.ZoomToBB()
 
@@ -445,6 +465,7 @@ class BoardVisPanel(wx.Panel):
         check_box_container = wx.StaticBoxSizer(wx.VERTICAL, self, board_name)
         self.board_properties[board_name]["layer sizer"] = check_box_container
         self.layer_control_sizer.Add(check_box_container, 1, wx.EXPAND | wx.ALL, 5)
+
         for layer in self.boards[board_name]:
             cb_sizer = wx.BoxSizer(wx.HORIZONTAL)
             color_circle = wx.StaticText(self, label="⬤ ")
@@ -459,6 +480,18 @@ class BoardVisPanel(wx.Panel):
             check_box_container.Add(cb_sizer)
 
         self.Layout()
+
+    def SetDisplayOrder(self):
+        for board in reversed(board_disp_order):
+            if board in self.boards:
+                for layer in reversed(layer_disp_order):
+                    if layer in self.boards[board]:
+                        for component in self.boards[board][layer]:
+                            
+                            component.PutInForeground()
+                            component.PutInBackground()
+                            pass
+        self.canvas.Draw(True)
 
     # If layer name is None, then hides entire board
     def ChangeLayerVisibility(self, board_name, layer_name=None, show=False):
