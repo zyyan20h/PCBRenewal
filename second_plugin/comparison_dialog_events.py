@@ -3,7 +3,6 @@ from wx.lib.floatcanvas import NavCanvas, FloatCanvas
 # import wx.svg
 from .comparison_dialog_ui import ComparisonOptionsDialog
 from .pcb_components import PcbBoard, get_offset, IU_PER_MM
-from .selection_dialog_events import ComponentSelectionDialog
 from .comp_analysis_events import CompAnalysisDialog
 
 # TODO Maybe call layout locally instead of self.layout everywhere
@@ -156,10 +155,6 @@ class BoardComparisonWindow(ComparisonOptionsDialog):
         index = self.rbCompMethod.GetSelection()
         self.comparison_method = choices[index]
         self.AddToLog(f"Comparison method changed to {choices[index]}")
-    
-    def ChangeEdgeSelection(self, event):
-        self.Hide()
-        selection_result = ComponentSelectionDialog(self).Show()   
 
     def HandleEdgeSelected(self):
         new_edge_corner = self.new_board.change_edge()
