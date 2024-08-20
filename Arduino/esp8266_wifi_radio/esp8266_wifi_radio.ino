@@ -16,8 +16,8 @@
 // To run, set your ESP8266 build to 160MHz, update the SSID info, and upload.
 
 // Enter your WiFi setup here:
-const char *SSID = "Jiasheng iPhone";
-const char *PASSWORD = "12345678";
+const char *SSID = "blank20h";
+const char *PASSWORD = "blank20h";
 
 //const char *URL = "https://npr-ice.streamguys1.com/live.mp3";
 //const char *URL="http://ndr-edge-206c.fra-lg.cdn.addradio.net/ndr/njoy/live/mp3/128/stream.mp3";//NJOY (German)

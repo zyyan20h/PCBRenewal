@@ -6,7 +6,7 @@ import math
 
 IU_PER_MM = pcbnew.PCB_IU_PER_MM
 
-DEFAULT_OFFSET = 0.4
+DEFAULT_OFFSET = 0.45
 
 # SHAPE_POLY_SET class in pcbnew seems to have BooleanAdd, BooleanSubtract classes
 # May be possible to remove the need for shapely library
