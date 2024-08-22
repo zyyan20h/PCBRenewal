@@ -1,12 +1,12 @@
 # from svgpathtools import svg2paths, wsvg, Line, Path, parse_path
-from shapely import MultiPolygon, Polygon, LineString, MultiLineString, Point, union_all, transform #  Go to Kicad Command prompt and type 'pip install shapely'
+from shapely import MultiPolygon, Polygon, LineString, MultiLineString, box, union_all, transform #  Go to Kicad Command prompt and type 'pip install shapely'
 import pcbnew
 # from .pcb_components import PcbTrack, PcbPad, rotate_point
 import math
 
 IU_PER_MM = pcbnew.PCB_IU_PER_MM
 
-DEFAULT_OFFSET = 0.45
+DEFAULT_OFFSET = 0.4
 
 # SHAPE_POLY_SET class in pcbnew seems to have BooleanAdd, BooleanSubtract classes
 # May be possible to remove the need for shapely library
@@ -32,15 +32,17 @@ def iu_to_mm(p):
     else:
         return (p[0]/IU_PER_MM, p[1]/IU_PER_MM)
     
-def as_svg(shape, filename, dimensions=None, shape2 = None):
-    shape = transform(shape, lambda x: pcbnew.pcbIUScale.IUTomm(x))
-    # Removed viewBox=\"0 0 100 100\"
-    with open(filename, "w") as svg_file:
-        svg_text = \
-            f"<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 100 100\"> \
-                {shape.svg(scale_factor=0.1, stroke_color='#ff0000')} {'' if not shape2 else shape2.svg(scale_factor=0.1, stroke_color='#00ff00')}</svg>"
-        svg_file.write(svg_text)
-        pass
+def convert_to_mm_coords(shape, board):
+    board_bb = board.board.GetBoundingBox()
+    bb_width = board_bb.GetWidth() / IU_PER_MM
+    bb_height = board_bb.GetHeight() / IU_PER_MM
+    board_topleft = pcbnew.VECTOR2I(board_bb.GetLeft(), board_bb.GetTop())
+
+    # Move the board edge to 0,0
+    shape = transform(shape,lambda x: x - list(board_topleft))
+    shape = transform(shape, lambda x: x / IU_PER_MM)
+
+    return bb_width, bb_height, shape
 
 class ComponentShape:
     # Decide if component_type is necessary
@@ -124,7 +126,7 @@ class NetShape:
             self.offset_path = offset_path_shape.exterior
         self.offset = offset
 
-class ShapeCollection:
+class NetCollection:
     def __init__(self, net_list=None, offset=DEFAULT_OFFSET, shape_collection=None):
         self.combined_net_paths = None
         self.offset = offset
@@ -150,10 +152,7 @@ class ShapeCollection:
 
     def path_difference(self, other):
         diff = self.combined_net_paths.difference(other.combined_net_paths)
-
-
-        # as_svg(diff, r"D:\KiCad\PCBS\renewablePCB\KiCAD_designs\bristleBot_V2\compare_result\test.svg")
-        return ShapeCollection(shape_collection=diff)
+        return NetCollection(shape_collection=diff)
 
     def export_path(self, board, filename, add_edge_cut=True, is_stencil=False):
         # shape = self.combined_net_paths
@@ -246,5 +245,58 @@ class ShapeCollection:
                 ind += 1
         pass
 
+class EdgeCollection:
+    def __init__(self, edge_cut_shapes=None, shape=None):
+        if edge_cut_shapes:
+            self.edge_polygon = self.create_edge_polygon(edge_cut_shapes)
+        else:
+            self.edge_polygon = shape
 
+    def create_edge_polygon(self, edge_cut_shapes):
+        polygons = []
+        print(edge_cut_shapes)
+        
+        # Using the shape to get start and end because the start and end stored in edge_cut_shapes refer to bounding box
+        for name, _, _, shape in edge_cut_shapes:
+            if name == "Rect":
+                start = shape.GetStart()
+                end = shape.GetEnd()
+                p = box(*start, *end)
+                polygons.append(p)
 
+        combined =  union_all(polygons)
+        print("combined", combined)
+        return combined
+    
+    def edge_difference(self, other_edge):
+        diff = self.edge_polygon.difference(other_edge.edge_polygon)
+        return EdgeCollection(shape=diff)
+    
+    def get_poly_points(self):
+        if type(self.edge_polygon) == Polygon:
+            return [self.edge_polygon.exterior.coords]
+        
+        elif type(self.edge_polygon) == MultiPolygon:
+            return [p.exterior.coords for p in self.edge_polygon.geoms]
+        
+    def export_edge(self, board, filename):
+        # Put this in a function in the furutre to avoid repeating code
+        shape = self.edge_polygon
+
+        board_bb = board.board.GetBoundingBox()
+        bb_width = board_bb.GetWidth() / IU_PER_MM
+        bb_height = board_bb.GetHeight() / IU_PER_MM
+        board_topleft = pcbnew.VECTOR2I(board_bb.GetLeft(), board_bb.GetTop())
+
+        # Move the board edge to 0,0
+        shape = transform(shape,lambda x: x - list(board_topleft))
+        shape = transform(shape, lambda x: x / IU_PER_MM)
+
+        with open(filename, "w") as svg_file:
+            svg_text =  f'''<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 {bb_width} {bb_height}\" width=\"{bb_width}mm\" height=\"{bb_height}mm\">
+                    <g stroke-linecap=\"round\">
+                        {shape.svg(scale_factor=0, opacity=1)}
+                    </g>
+                    </svg>'''
+            svg_file.write(svg_text)
+        pass

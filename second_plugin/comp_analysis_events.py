@@ -1,5 +1,5 @@
 import configparser
-from .poly_comparison import ShapeCollection, IU_PER_MM
+from .poly_comparison import NetCollection, IU_PER_MM
 import wx
 from .comp_analysis_ui import AnalysisDialog
 

@@ -4,7 +4,7 @@ import math
 import os
 import pathlib
 
-from .poly_comparison import ShapeCollection, as_svg
+from .poly_comparison import NetCollection, EdgeCollection, convert_to_mm_coords
 
 # TODO: create a parent class calles PcbComponents, and place the common functions in it
 
@@ -431,9 +431,10 @@ class PcbBoard():
         
         return None
 
-    def get_layers(self):
-        # Gets all layers and converts them to their readable names
-        layer_list = [self.board.GetLayerName(layer) for layer in self.board.GetEnabledLayers().Seq()]
+    def get_cu_layers(self):
+        # Gets all copper layers and converts them to their readable names
+        # layer_list = [self.board.GetLayerName(layer) for layer in self.board.GetEnabledLayers().Seq()]
+        layer_list = [self.board.GetLayerName(layer) for layer in self.board.GetEnabledLayers().CuStack()]
 
         return layer_list
 
@@ -526,8 +527,8 @@ class PcbBoard():
         
         for layer in selected_layers:
             if layer in net_dict:
-                path_dict[layer] = ShapeCollection(net_list=net_dict[layer])
-
+                path_dict[layer] = NetCollection(net_list=net_dict[layer])
+        
         return path_dict
 
     def compare_paths(self, old_board, selected_layers=None, new_net_dict = None, old_net_dict=None):
@@ -588,6 +589,14 @@ class PcbBoard():
                     erase_net_dict[layer].append(old_net)
 
             return erase_net_dict, write_net_dict
+
+    def compare_edges(self, old_board):
+        new_edges = EdgeCollection(self.edge_cut_shapes)
+        old_edges = EdgeCollection(old_board.edge_cut_shapes)
+
+        erase_edges = old_edges.edge_difference(new_edges)
+        write_edges = new_edges.edge_difference(old_edges)
+        return erase_edges, write_edges
 
     def compare_holes(self, old_board):
         erase_holes = []
@@ -785,13 +794,45 @@ class PcbBoard():
         save_board(self.disp_board)
         save_board(self.export_board)
 
-        return erase_paths, write_paths
+        erase_edges, write_edges = self.compare_edges(old_board)
+        erase_edges.export_edge(old_board, os.path.join(self.comp_folder_path, "erase_Edge.Cuts.svg"))
+        write_edges.export_edge(self, os.path.join(self.comp_folder_path, "write_Edge.Cuts.svg"))
 
-    def path_svg(self, net_list, name):
-        col = ShapeCollection(net_list=net_list)
-        as_svg(col.combined_net_paths, os.path.join(self.comp_folder_path, name))
+        self.export_overwrite(erase_paths, write_paths)
 
-        return col
+        return erase_paths, erase_edges, write_paths, write_edges
+
+    def export_overwrite(self, erase_paths, write_paths):
+        overwrite_dict = dict()
+
+        new_path_dict = self.create_path_dict(selected_layers=write_paths.keys())
+
+        print("\nOverwrite Calc\n")
+
+        for layer in write_paths:
+            n = new_path_dict[layer].polygonize_paths()
+            e = erase_paths[layer].polygonize_paths()
+            w = write_paths[layer].polygonize_paths()
+            # print("new", n)
+            # print("erase", e)
+            # print("write", w)
+            ow = e.intersection(n.difference(w))
+
+            filename = os.path.join(self.comp_folder_path, f"overwrite_{layer}.svg")
+
+            bb_width, bb_height, shape = convert_to_mm_coords(ow, self)
+            # _, _, shape2 = convert_to_mm_coords(e, self)
+            #{shape2.svg(scale_factor=0, opacity=0.6, color="#FF0000")}
+
+            with open(filename, "w") as svg_file:
+                svg_text =  f'''<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 {bb_width} {bb_height}\" width=\"{bb_width}mm\" height=\"{bb_height}mm\">
+                    <g stroke-linecap=\"round\">
+                        {shape.svg(scale_factor=0)} 
+                    </g>
+                    </svg>'''
+                svg_file.write(svg_text)
+
+        pass
 
     def open_disp_board(self):
         if self.disp_board:

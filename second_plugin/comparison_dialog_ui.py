@@ -65,11 +65,11 @@ class ComparisonOptionsDialog ( wx.Dialog ):
 
 		bSizer9.Add( self.LabelNewFilePath, 9, wx.ALL|wx.ALIGN_CENTER_HORIZONTAL|wx.ALIGN_CENTER_VERTICAL, 5 )
 
-		self.ButtonNewFileUpload = wx.Button( self.PanelNewFileUpload, wx.ID_ANY, u"Select File", wx.DefaultPosition, wx.DefaultSize, 0 )
-		bSizer9.Add( self.ButtonNewFileUpload, 0, wx.ALL|wx.ALIGN_CENTER_HORIZONTAL|wx.ALIGN_CENTER_VERTICAL, 5 )
-
 		self.ButtonUseCurrBoard = wx.Button( self.PanelNewFileUpload, wx.ID_ANY, u"Use Current Board", wx.DefaultPosition, wx.DefaultSize, 0 )
 		bSizer9.Add( self.ButtonUseCurrBoard, 0, wx.ALIGN_CENTER_VERTICAL|wx.ALL, 5 )
+
+		self.ButtonNewFileUpload = wx.Button( self.PanelNewFileUpload, wx.ID_ANY, u"Select File", wx.DefaultPosition, wx.DefaultSize, 0 )
+		bSizer9.Add( self.ButtonNewFileUpload, 0, wx.ALL|wx.ALIGN_CENTER_HORIZONTAL|wx.ALIGN_CENTER_VERTICAL, 5 )
 
 
 		self.PanelNewFileUpload.SetSizer( bSizer9 )
@@ -114,13 +114,10 @@ class ComparisonOptionsDialog ( wx.Dialog ):
 		self.cbExportOriginal = wx.CheckBox( self.PanelCompLayers, wx.ID_ANY, u"Export Original Board", wx.DefaultPosition, wx.DefaultSize, 0 )
 		bSizer16.Add( self.cbExportOriginal, 0, wx.ALL, 5 )
 
-		self.cbPlotEdgeCuts = wx.CheckBox( self.PanelCompLayers, wx.ID_ANY, u"Plot Edge Cuts", wx.DefaultPosition, wx.DefaultSize, 0 )
-		bSizer16.Add( self.cbPlotEdgeCuts, 0, wx.ALL, 5 )
 
+		bSizer2.Add( bSizer16, 2, wx.ALIGN_RIGHT, 5 )
 
-		bSizer2.Add( bSizer16, 1, wx.ALIGN_RIGHT, 5 )
-
-		self.ButtonCompare = wx.Button( self.PanelCompLayers, wx.ID_ANY, u"Compare", wx.DefaultPosition, wx.DefaultSize, 0 )
+		self.ButtonCompare = wx.Button( self.PanelCompLayers, wx.ID_ANY, u"Compare and Export", wx.DefaultPosition, wx.DefaultSize, 0 )
 		bSizer2.Add( self.ButtonCompare, 0, wx.ALL|wx.ALIGN_RIGHT, 5 )
 
 
@@ -130,7 +127,7 @@ class ComparisonOptionsDialog ( wx.Dialog ):
 		sbSizerCompLayers.Add( self.PanelCompLayers, 1, wx.EXPAND|wx.ALL, 5 )
 
 
-		bSizer13.Add( sbSizerCompLayers, 2, wx.EXPAND, 5 )
+		bSizer13.Add( sbSizerCompLayers, 0, wx.EXPAND, 5 )
 
 
 		bSizer15.Add( bSizer13, 1, wx.EXPAND, 0 )
@@ -152,7 +149,7 @@ class ComparisonOptionsDialog ( wx.Dialog ):
 		self.ButtonAnalysis = wx.Button( self.PanelAll, wx.ID_ANY, u"Run Analysis", wx.DefaultPosition, wx.DefaultSize, 0 )
 		bSizer21.Add( self.ButtonAnalysis, 0, wx.ALL, 5 )
 
-		self.ButtonOK = wx.Button( self.PanelAll, wx.ID_ANY, u"OK", wx.DefaultPosition, wx.DefaultSize, 0 )
+		self.ButtonOK = wx.Button( self.PanelAll, wx.ID_ANY, u"Exit and Open in Kicad", wx.DefaultPosition, wx.DefaultSize, 0 )
 		bSizer21.Add( self.ButtonOK, 0, wx.ALL, 5 )
 
 
@@ -176,10 +173,9 @@ class ComparisonOptionsDialog ( wx.Dialog ):
 		# Connect Events
 		self.Bind( wx.EVT_CLOSE, self.OnClose )
 		self.ButtonOldFileUpload.Bind( wx.EVT_BUTTON, self.UploadOldFile )
-		self.ButtonNewFileUpload.Bind( wx.EVT_BUTTON, self.UploadNewFile )
 		self.ButtonUseCurrBoard.Bind( wx.EVT_BUTTON, self.UseCurrentBoard )
+		self.ButtonNewFileUpload.Bind( wx.EVT_BUTTON, self.UploadNewFile )
 		self.rbCompMethod.Bind( wx.EVT_RADIOBOX, self.ComparisonMethodChanged )
-		self.cbPlotEdgeCuts.Bind( wx.EVT_CHECKBOX, self.PlotEdgeCutsChanged )
 		self.ButtonCompare.Bind( wx.EVT_BUTTON, self.CompareBoards )
 		self.ButtonAnalysis.Bind( wx.EVT_BUTTON, self.RunAnalysis )
 		self.ButtonOK.Bind( wx.EVT_BUTTON, self.OKClicked )
@@ -195,16 +191,13 @@ class ComparisonOptionsDialog ( wx.Dialog ):
 	def UploadOldFile( self, event ):
 		event.Skip()
 
-	def UploadNewFile( self, event ):
-		event.Skip()
-
 	def UseCurrentBoard( self, event ):
 		event.Skip()
 
-	def ComparisonMethodChanged( self, event ):
+	def UploadNewFile( self, event ):
 		event.Skip()
 
-	def PlotEdgeCutsChanged( self, event ):
+	def ComparisonMethodChanged( self, event ):
 		event.Skip()
 
 	def CompareBoards( self, event ):

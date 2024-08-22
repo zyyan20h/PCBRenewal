@@ -137,17 +137,19 @@ class BoardComparisonWindow(ComparisonOptionsDialog):
 
         if board.is_valid:
             print("new board is valid")
-            self.board_vis.PlotBoard(board, "New Board" if is_new else "Old Board")
+            board_name = "New Board" if is_new else "Old Board"
+            # self.board_vis.RemoveBoard(board_name)
+            self.board_vis.PlotBoard(board, board_name)
             
             self.UpdateAlignChoices()
             self.UpdateBoardAlignment()
 
     def UpdateCompLayers(self):
-        self.all_layers = self.old_board.get_layers()
+        self.cu_layers = self.old_board.get_cu_layers()
 
         self.listBoxCompLayers.Clear()
 
-        for layer in self.all_layers:
+        for layer in self.cu_layers:
             self.listBoxCompLayers.Append(layer)
 
     def ComparisonMethodChanged(self, event):
@@ -265,14 +267,19 @@ class BoardComparisonWindow(ComparisonOptionsDialog):
         # self.AddToLog("After aligning " + str(self.new_board.edge.GetStart()))
 
         #Convert from indexes to layer names
-        selected_layers = [self.all_layers[index] for index in selected_layers]
+        selected_layers = [self.cu_layers[index] for index in selected_layers]
 
-        erase_paths, write_paths = self.new_board.compare_and_plot(self.old_board, selected_layers, compare_paths=self.comparison_method)
+        erase_paths, erase_edges, write_paths, write_edges = self.new_board.compare_and_plot(self.old_board, selected_layers, compare_paths=self.comparison_method)
         self.AddToLog("Boards compared")
         self.erase_paths = erase_paths
         self.write_paths = write_paths
-        self.board_vis.PlotBoard(self.new_board, ERASE_NAME, path_dict=erase_paths)
-        self.board_vis.PlotBoard(self.new_board, WRITE_NAME, path_dict=write_paths)
+        # self.board_vis.RemoveBoard(ERASE_NAME)
+        # self.board_vis.RemoveBoard(WRITE_NAME)
+        self.board_vis.PlotBoard(self.old_board, ERASE_NAME, path_dict=erase_paths, 
+                                 parent_board_name="Old Board", edge_cut_poly=erase_edges)
+        self.board_vis.PlotBoard(self.new_board, WRITE_NAME, path_dict=write_paths, 
+                                 parent_board_name="New Board", edge_cut_poly=write_edges)
+        self.Layout()
         
 
     def ExportFiles(self, event):
@@ -367,15 +374,15 @@ class BoardVisPanel(wx.Panel):
         self.canvas.ZoomToBB()
         self.canvas.Draw(True)
 
-    def PlotBoard(self, board, board_name, net_dict=None, path_dict=None):
+    def PlotBoard(self, board, board_name, parent_board_name=None, net_dict=None, path_dict=None, edge_cut_poly=None):
         print("plotting board")
-        if board_name in self.boards:
-            self.RemoveBoard(board_name=board_name)
-            self.boards.pop(board_name, None) # Is probably redundant
-
         if not board:
             return
 
+        if board_name in self.boards:
+            self.RemoveBoard(board_name=board_name)
+            self.boards.pop(board_name, None) # Is probably redundant
+        
         self.board_properties[board_name] = dict()
         self.boards[board_name] = dict()
 
@@ -411,7 +418,8 @@ class BoardVisPanel(wx.Panel):
                     ext_point_lst = polygon.exterior.coords
                     if len(ext_point_lst) == 0:
                             break
-                    shape = self.canvas.AddPolygon(ext_point_lst, LineStyle="Transparent", FillStyle="Solid", FillColor=BOARD_COLORS[board_name][layer])
+                    shape = self.canvas.AddPolygon(ext_point_lst, LineStyle="Transparent", 
+                                                   FillStyle="Solid", FillColor=BOARD_COLORS[board_name][layer])
                     self.boards[board_name][layer].append(shape)
 
                     # As far as I know, you cannot natively add holes into polygons
@@ -423,22 +431,29 @@ class BoardVisPanel(wx.Panel):
                             break
                         hole_shape = self.canvas.AddPolygon(hole.coords, LineStyle="Transparent", FillStyle="Solid", FillColor=BACKGROUND_COLOR)
                         self.boards[board_name][layer].append(hole_shape)
-       
-        self.boards[board_name]["Edge.Cuts"] = []
-        for shape_name, start, end, _ in board.edge_cut_shapes:
-            if shape_name == "Rect":
-                width = end[0] - start[0]
-                height = end[1] - start[1]
-                shape = self.canvas.AddRectangle(start, (width, height), LineColor="#DDDDDD", FillStyle="Transparent")
-            elif shape_name == "Circle":
-                diameter = 2 * (end - start).EuclideanNorm()
-                shape = self.canvas.AddCircle(start, diameter, LineColor="#DDDDDD", FillStyle="Transparent")
-            else:
-                print(f"Unkown Shape: {shape_name} at {start}")
-                pass
-            self.boards[board_name]["Edge.Cuts"].append(shape)
 
-        self.AddBoardLayerControls(board_name)
+        if not edge_cut_poly:
+            self.boards[board_name]["Edge.Cuts"] = []
+            for shape_name, start, end, _ in board.edge_cut_shapes:
+                if shape_name == "Rect":
+                    width = end[0] - start[0]
+                    height = end[1] - start[1]
+                    shape = self.canvas.AddRectangle(start, (width, height), LineColor="#DDDDDD", FillStyle="Transparent")
+                elif shape_name == "Circle":
+                    diameter = 2 * (end - start).EuclideanNorm()
+                    shape = self.canvas.AddCircle(start, diameter, LineColor="#DDDDDD", FillStyle="Transparent")
+                else:
+                    print(f"Unkown Shape: {shape_name} at {start}")
+                    pass
+                self.boards[board_name]["Edge.Cuts"].append(shape)
+        else:
+            self.boards[board_name]["Edge.Cuts"] = []
+            for point_lst in edge_cut_poly.get_poly_points():
+                if len(point_lst) > 0:
+                    shape = self.canvas.AddPolygon(point_lst, FillStyle="Transparent", LineColor="#DDDDDD")
+                    self.boards[board_name]["Edge.Cuts"].append(shape)
+
+        self.AddBoardLayerControls(board_name, parent_board_name)
         self.SetDisplayOrder()
         self.canvas.Draw(True)
         self.canvas.ZoomToBB()
@@ -450,18 +465,41 @@ class BoardVisPanel(wx.Panel):
             for layer in board_geometry:
                 self.canvas.RemoveObjects(board_geometry[layer])
 
-            self.RemovedBoardLayerControls(board_name)
+            # self.RemoveBoardLayerCtrlSizer(board_name)
+            self.board_properties[board_name]["remove layer ctrls"]()
 
-    def RemovedBoardLayerControls(self, board_name):
+    def RemoveBoardLayerCtrlSizer(self, board_name):
+        print(f"num controls before remove: {self.layer_control_sizer.ItemCount}")
+        self.board_properties[board_name]["layer sizer"].Clear(True)
         self.layer_control_sizer.Remove(self.board_properties[board_name]["layer sizer"])
+        print(f"num controls after remove: {self.layer_control_sizer.ItemCount}")
+        self.Layout()
+    
+    def RemoveLayerCtrlsFromSizer(self, parent_board_name, indices):
+        sizer = self.board_properties[parent_board_name]["layer sizer"]
+        for index in indices:
+            sizer.Remove(index)
         self.Layout()
 
-    def AddBoardLayerControls(self, board_name):
-        check_box_container = wx.StaticBoxSizer(wx.VERTICAL, self, board_name)
-        self.board_properties[board_name]["layer sizer"] = check_box_container
-        self.layer_control_sizer.Add(check_box_container, 1, wx.EXPAND | wx.ALL, 5)
+    def AddBoardLayerControls(self, board_name, parent_board_name=None):
+        print(board_name, parent_board_name)
+        if not parent_board_name:
+            check_box_container = wx.StaticBoxSizer(wx.VERTICAL, self, board_name)
+            index = board_disp_order.index(board_name)
 
+            if index < self.layer_control_sizer.GetItemCount():
+                self.layer_control_sizer.Insert(index, check_box_container, 1, wx.EXPAND | wx.ALL, 5)
+            else:
+                self.layer_control_sizer.Add(check_box_container, 1, wx.EXPAND | wx.ALL, 5)
+        else:
+            check_box_container = self.board_properties[parent_board_name]["layer sizer"]
+
+        self.board_properties[board_name]["layer sizer"] = check_box_container       
+
+        indices_added = []
         for layer in self.boards[board_name]:
+            indices_added.append(check_box_container.GetItemCount())
+
             cb_sizer = wx.BoxSizer(wx.HORIZONTAL)
             color_circle = wx.StaticText(self, label="⬤ ")
             color_circle.SetForegroundColour(BOARD_COLORS[board_name][layer])
@@ -473,6 +511,13 @@ class BoardVisPanel(wx.Panel):
                 lambda event, cb=check_box, l=layer: self.ChangeLayerVisibility(board_name, l, cb.IsChecked())
             check_box.Bind(wx.EVT_CHECKBOX, layer_change_function)
             check_box_container.Add(cb_sizer)
+
+        if not parent_board_name:
+            self.board_properties[board_name]["remove layer ctrls"] = \
+                lambda bn=board_name: self.RemoveBoardLayerCtrlSizer(bn)
+        else:
+            self.board_properties[board_name]["remove layer ctrls"] = \
+                lambda pbn=parent_board_name, inds=indices_added: self.RemoveLayerCtrlsFromSizer(pbn, inds)
 
         self.Layout()
 
