@@ -163,8 +163,10 @@ class NetCollection:
         bb_height = board_bb.GetHeight() / IU_PER_MM
         board_topleft = pcbnew.VECTOR2I(board_bb.GetLeft(), board_bb.GetTop())
 
+        # Doesn't seem to be actually moving it to 0,0
         # Move the board edge to 0,0
-        shape = transform(shape,lambda x: x - list(board_topleft))
+        print(" board offset", board.offset_vec)
+        shape = transform(shape,lambda x: x - list(board_topleft) - board.offset_vec)
         shape = transform(shape, lambda x: x / IU_PER_MM)
         # edge_cut_d_string = f"M 0,0 L 0,{height} L {width},{height} L {width},0"
 
