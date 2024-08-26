@@ -246,7 +246,9 @@ class NetCollection:
         pass
 
 class EdgeCollection:
-    def __init__(self, edge_cut_shapes=None, shape=None):
+    def __init__(self, edge_cut_shapes=None, board=None, shape=None):
+        self.board = board
+        
         if edge_cut_shapes:
             self.edge_polygon = self.create_edge_polygon(edge_cut_shapes)
         else:
@@ -259,8 +261,11 @@ class EdgeCollection:
         # Using the shape to get start and end because the start and end stored in edge_cut_shapes refer to bounding box
         for name, _, _, shape in edge_cut_shapes:
             if name == "Rect":
-                start = shape.GetStart()
-                end = shape.GetEnd()
+                board_offset = pcbnew.VECTOR2I(0,0)
+                if self.board:
+                    board_offset = self.board.offset_vec
+                start = shape.GetStart() + board_offset
+                end = shape.GetEnd() + board_offset
                 p = box(*start, *end)
                 polygons.append(p)
 

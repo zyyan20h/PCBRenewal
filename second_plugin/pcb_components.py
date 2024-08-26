@@ -591,8 +591,8 @@ class PcbBoard():
             return erase_net_dict, write_net_dict
 
     def compare_edges(self, old_board):
-        new_edges = EdgeCollection(self.edge_cut_shapes)
-        old_edges = EdgeCollection(old_board.edge_cut_shapes)
+        new_edges = EdgeCollection(self.edge_cut_shapes, self)
+        old_edges = EdgeCollection(old_board.edge_cut_shapes, old_board)
 
         erase_edges = old_edges.edge_difference(new_edges)
         write_edges = new_edges.edge_difference(old_edges)
