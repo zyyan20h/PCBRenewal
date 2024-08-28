@@ -126,8 +126,8 @@ ESPboyInit myESPboy;
 //#define APP_MARKER 0xCA35
 //#include "GAMES/rom_36.h" //Star Wars - The Empire Strikes Back 
 //#define APP_MARKER 0xCA36
-#include "GAMES/rom_37.h" //Super Mario Land 2 - 6 Golden Coins
-#define APP_MARKER 0xCA37
+//#include "GAMES/rom_37.h" //Super Mario Land 2 - 6 Golden Coins
+//#define APP_MARKER 0xCA37
 //#include "GAMES/rom_38.h" //Super Off Road 
 //#define APP_MARKER 0xCA38
 //#include "GAMES/rom_39.h" //Pocket_Monsters_-_Green_Version_J_V1.0_S_patched
@@ -166,6 +166,8 @@ ESPboyInit myESPboy;
 //#define APP_MARKER 0xCA56 
 //#include "GAMES/rom_57.h" //Kwirk (UE)
 //#define APP_MARKER 0xCA57
+#include "GAMES/rom_58.h" //Kwirk (UE)
+#define APP_MARKER 0xCA58
 
 
 #define WRITE_DELAY 2000
