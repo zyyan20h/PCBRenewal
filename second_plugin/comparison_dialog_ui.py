@@ -87,8 +87,14 @@ class ComparisonOptionsDialog ( wx.Dialog ):
 
 		sbSizerAlignBoards = wx.StaticBoxSizer( wx.StaticBox( self.PanelOperations, wx.ID_ANY, u"Align Boards" ), wx.VERTICAL )
 
+		self.PanelAlignBoards1 = wx.ScrolledWindow( sbSizerAlignBoards.GetStaticBox(), wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, wx.HSCROLL|wx.VSCROLL )
+		self.PanelAlignBoards1.SetScrollRate( 5, 5 )
+		self.PanelAlignBoards1.Hide()
+
+		sbSizerAlignBoards.Add( self.PanelAlignBoards1, 1, wx.EXPAND |wx.ALL, 5 )
+
 		self.PanelAlignBoards = wx.Panel( sbSizerAlignBoards.GetStaticBox(), wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, wx.TAB_TRAVERSAL )
-		sbSizerAlignBoards.Add( self.PanelAlignBoards, 1, wx.ALL|wx.EXPAND, 5 )
+		sbSizerAlignBoards.Add( self.PanelAlignBoards, 1, wx.EXPAND |wx.ALL, 5 )
 
 
 		bSizer13.Add( sbSizerAlignBoards, 1, wx.EXPAND|wx.LEFT, 0 )

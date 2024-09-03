@@ -12,7 +12,7 @@ CONFIG_FILE_PARAMS = {
         "diameter": {
             "FriendlyName":"Diameter",
             "Unit":"mm",
-            "Default":0
+            "Default":0.4
         },
         "epoxy_overflow": {
             "FriendlyName":"Epoxy Overflow",
@@ -22,12 +22,12 @@ CONFIG_FILE_PARAMS = {
         "deposition_feedrate": {
             "FriendlyName":"Depostion Feedrate",
             "Unit":"mm/s",
-            "Default":0
+            "Default":1
         },
-        "depostion_wattage": {
+        "deposition_wattage": {
             "FriendlyName":"Depositon Wattage",
             "Unit":"W",
-            "Default":0
+            "Default":10
         }
     },
 
@@ -35,7 +35,7 @@ CONFIG_FILE_PARAMS = {
         "engraving_feedrate": {
             "FriendlyName":"Engraving Feedrate",
             "Unit":"mm/s",
-            "Default":0
+            "Default":20
         },
         "plunge_amount": {
             "FriendlyName":"Plunge Amount",
@@ -45,7 +45,7 @@ CONFIG_FILE_PARAMS = {
         "engraving_wattage": {
             "FriendlyName":"Engraving Wattage",
             "Unit":"W",
-            "Default":0
+            "Default":100000
         }
     },
 
@@ -53,17 +53,22 @@ CONFIG_FILE_PARAMS = {
         "epoxy_density": {
             "FriendlyName":"Epoxy Density",
             "Unit":"g/cm3",
-            "Default":0
+            "Default":3.72
         },
         "epoxy_price": {
             "FriendlyName":"Epoxy Price",
-            "Unit":"$",
-            "Default":0
+            "Unit":"$/g",
+            "Default":13.44
+        },
+        "epoxy_curing_time": {
+            "FriendlyName":"Curing Time",
+            "Unit":"s",
+            "Default":3600
         },
         "fr4_price": {
             "FriendlyName":"FR4 Price",
             "Unit":"$",
-            "Default":0
+            "Default":10.99
         },
         "copper_thickness": {
             "FriendlyName":"Copper Thickness",
@@ -73,7 +78,7 @@ CONFIG_FILE_PARAMS = {
         "copper_density": {
             "FriendlyName":"Copper Density",
             "Unit":"g/cm3",
-            "Default":0
+            "Default":8.96
         },
         "fiberglass_thickness": {
             "FriendlyName":"Fiberglass Thickness",
@@ -93,11 +98,18 @@ CONFIG_USER_PARAMS = {
         "groove_depth": {
             "FriendlyName": "Groove Depth",
             "Unit":"mm",
-            "Default":0
+            "Default":0.2
         }
     }
 }
 
+WRITE_PATH_LEN = 10
+ERASE_PATH_LEN = 10
+NEW_BOARD_PATH_LEN = 100
+
+def format_float(num, places=2):
+    return f"{round(num, places):.2f}"
+    
 def create_config_file():
     config = configparser.ConfigParser()
     for category in CONFIG_FILE_PARAMS:
@@ -109,7 +121,7 @@ def create_config_file():
     with open(DEFAULT_CONFIG_FILE, 'w') as con_file:
         config.write(con_file)
 
-create_config_file()
+# create_config_file()
 
 class PathParams():
     def __init__(self, board=None, path_dict=None):
@@ -135,6 +147,8 @@ class CompAnalysisDialog(AnalysisDialog):
         # self.erase_paths = erase_paths
         # self.write_paths = write_paths
         
+        self.user_params = dict()
+
         self.AddFileParams()
         self.AddUserParams()
         pass
@@ -185,6 +199,11 @@ class CompAnalysisDialog(AnalysisDialog):
                                            label=param_info["Unit"])
                 input_box = wx.TextCtrl(self.PanelUserParams)
                 input_box.SetValue(str(param_info["Default"]))
+                def text_chang_fn(event, p=param):
+                    self.user_params[p] = input_box.GetValue()
+                input_box.Bind(wx.EVT_TEXT, text_chang_fn)
+
+                self.user_params[param] = str(param_info["Default"])
 
                 if param_info["Unit"] == "$":
                     single_sizer.Add(unit_label)
@@ -210,19 +229,42 @@ Time Saved = {time}\nEpoxy Used = {material}\nMoney Saved = {price}\nEnergy Save
         pass
 
     def CalcTime(self):
-        return "0"
+        dep_fr = float(self.config.get("Deposition", "deposition_feedrate"))
+        eng_fr = float(self.config.get("Engraving", "engraving_feedrate"))
+
+        self.original_time = (NEW_BOARD_PATH_LEN * eng_fr)
+        original_time_min = (NEW_BOARD_PATH_LEN * eng_fr) / 60
+
+        self.erase_time = (dep_fr * ERASE_PATH_LEN)
+        self.write_time = (eng_fr * WRITE_PATH_LEN)
+        erase_n_write_time_min = (self.erase_time + self.write_time) / 60
+
+        return f"{format_float(original_time_min)} min - {format_float(erase_n_write_time_min)} min = {format_float(original_time_min - erase_n_write_time_min)} min"
         pass
     
     def CalcMaterial(self):
-        return "0"
+        epoxy_diameter = float(self.config.get("Deposition", "diameter"))
+        epoxy_volume = float(self.user_params["groove_depth"]) * epoxy_diameter * ERASE_PATH_LEN
+        self.epoxy_volume = epoxy_volume
+        return f"{format_float(epoxy_volume)} cm3"
         pass
 
     def CalcPrice(self):
-        return "0"
+        # Maybe just do price per ml?
+        epoxy_density = float(self.config.get("Material", "epoxy_density"))
+        epoxy_price = float(self.config.get("Material", "epoxy_price"))
+        fr4_price = float(self.config.get("Material", "fr4_price"))
+        erase_n_write_price = self.epoxy_volume * epoxy_price
+        original_price = fr4_price
+        return f"${format_float(original_price)} - ${format_float(erase_n_write_price)} = ${format_float(original_price - erase_n_write_price)}"
         pass
     
     def CalcEnergy(self):
-        return "0"
+        dep_wtt = float(self.config.get("Deposition", "deposition_wattage"))
+        eng_wtt = float(self.config.get("Engraving", "engraving_wattage"))
+        original_energy = eng_wtt * self.original_time
+        erase_n_write_energy = (eng_wtt * self.write_time) + (dep_wtt * self.erase_time)
+        return f"{format_float(original_energy)} J - {format_float(erase_n_write_energy)} J = {format_float(original_energy - erase_n_write_energy)} J"
         pass
 
     def OnClose(self, event):
