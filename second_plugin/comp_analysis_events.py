@@ -107,6 +107,8 @@ WRITE_PATH_LEN = 10
 ERASE_PATH_LEN = 10
 NEW_BOARD_PATH_LEN = 100
 
+MM2_TO_FT2 = 1.07639 * (10**-5)
+
 def format_float(num, places=2):
     return f"{round(num, places):.2f}"
     
@@ -142,10 +144,10 @@ class CompAnalysisDialog(AnalysisDialog):
         self.config = configparser.ConfigParser()
         self.config.read(config_file)
         print(self.config.sections())
-        # self.old_board = old_board
-        # self.new_board = new_board
-        # self.erase_paths = erase_paths
-        # self.write_paths = write_paths
+        self.old_board = old_board
+        self.new_board = new_board
+        self.erase_paths = erase_paths
+        self.write_paths = write_paths
         
         self.user_params = dict()
 
@@ -218,12 +220,12 @@ class CompAnalysisDialog(AnalysisDialog):
 
     def CalcResources(self):
         time = self.CalcTime()
-        material = self.CalcMaterial()
+        epoxy, copper, fiberglass = self.CalcMaterial()
         price = self.CalcPrice()
         energy = self.CalcEnergy()
         text = f'''
 =====Sustainability Evaluation=====
-Time Saved = {time}\nEpoxy Used = {material}\nMoney Saved = {price}\nEnergy Saved = {energy}'''
+Time Saved = {time}\nEpoxy Used = {epoxy}\nCopper Saved = {copper}\nFiberglass Saved = {fiberglass}\nMoney Saved = {price}\nEnergy Saved = {energy}'''
         
         return text
         pass
@@ -246,7 +248,17 @@ Time Saved = {time}\nEpoxy Used = {material}\nMoney Saved = {price}\nEnergy Save
         epoxy_diameter = float(self.config.get("Deposition", "diameter"))
         epoxy_volume = float(self.user_params["groove_depth"]) * epoxy_diameter * ERASE_PATH_LEN
         self.epoxy_volume = epoxy_volume
-        return f"{format_float(epoxy_volume)} cm3"
+
+        copper_per_ft2 = float(self.config.get("Material", "copper_thickness")) 
+        fbr_thickness = float(self.config.get("Material", "fiberglass_thickness"))
+        fbr_density = float(self.config.get("Material", "fiberglass_density"))
+
+        original_area = self.new_board.edge.get_area_mm() * MM2_TO_FT2
+
+        copper_weight = copper_per_ft2 * original_area
+        fbr_weight = original_area * fbr_thickness * fbr_density
+
+        return f"{format_float(epoxy_volume)} ml", f"{format_float(copper_weight)} oz", f"{format_float(fbr_weight)} g"
         pass
 
     def CalcPrice(self):

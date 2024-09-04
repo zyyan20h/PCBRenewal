@@ -404,6 +404,8 @@ class PcbBoard():
 
         self.add_holes()
 
+        self.edge = EdgeCollection(self.edge_cut_shapes, self)
+
     def offset(self, offset):
         if offset == pcbnew.VECTOR2I(0,0):
             return
@@ -499,8 +501,8 @@ class PcbBoard():
                 max_area = curr_area
                 max_area_ind = ind
 
-        if not self.edge:
-            self.edge = drawings.pop(max_area_ind)
+        # if not self.edge:
+        #     self.edge = drawings.pop(max_area_ind)
 
         self.holes = [PcbHole(d.Duplicate()) for d in drawings]
 
@@ -591,8 +593,8 @@ class PcbBoard():
             return erase_net_dict, write_net_dict
 
     def compare_edges(self, old_board):
-        new_edges = EdgeCollection(self.edge_cut_shapes, self)
-        old_edges = EdgeCollection(old_board.edge_cut_shapes, old_board)
+        new_edges =  self.edge # EdgeCollection(self.edge_cut_shapes, self)
+        old_edges = old_board.edge # EdgeCollection(old_board.edge_cut_shapes, old_board)
 
         erase_edges = old_edges.edge_difference(new_edges)
         write_edges = new_edges.edge_difference(old_edges)

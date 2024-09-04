@@ -272,12 +272,15 @@ class EdgeCollection:
                 polygons.append(p)
 
         combined =  union_all(polygons)
-        print("combined", combined)
+        # print("combined", combined)
         return combined
     
     def edge_difference(self, other_edge):
         diff = self.edge_polygon.difference(other_edge.edge_polygon)
         return EdgeCollection(shape=diff)
+    
+    def get_area_mm(self):
+        return self.edge_polygon.area / (IU_PER_MM * IU_PER_MM)
     
     def get_poly_points(self):
         if type(self.edge_polygon) == Polygon:
