@@ -55,20 +55,10 @@ CONFIG_FILE_PARAMS = {
             "Unit":"g/cm3",
             "Default":3.72
         },
-        "epoxy_price": {
-            "FriendlyName":"Epoxy Price",
-            "Unit":"$/g",
-            "Default":13.44
-        },
         "epoxy_curing_time": {
             "FriendlyName":"Curing Time",
             "Unit":"s",
             "Default":3600
-        },
-        "fr4_price": {
-            "FriendlyName":"FR4 Price",
-            "Unit":"$",
-            "Default":10.99
         },
         "copper_thickness": {
             "FriendlyName":"Copper Thickness",
@@ -90,6 +80,19 @@ CONFIG_FILE_PARAMS = {
             "Unit":"g/cm3",
             "Default":1.850
         },
+    },
+
+    "Price": {
+        "epoxy_price": {
+            "FriendlyName":"Epoxy Price",
+            "Unit":"$/g",
+            "Default":13.44
+        },
+        "fr4_price": {
+            "FriendlyName":"FR4 Price",
+            "Unit":"$",
+            "Default":10.99
+        },
     }
 }
 
@@ -108,6 +111,7 @@ ERASE_PATH_LEN = 10
 NEW_BOARD_PATH_LEN = 100
 
 MM2_TO_FT2 = 1.07639 * (10**-5)
+OZ_TO_G = 28.3495
 
 def format_float(num, places=2):
     return f"{round(num, places):.2f}"
@@ -137,18 +141,24 @@ class PathParams():
             self.length_dict[layer] = self.path_dict[layer].length
         pass
 
+class CompAnalysis():
+    def __init__(self, old_board, new_board):
+        pass
+
+    def RunAnalysis():
+        pass
+
 class CompAnalysisDialog(AnalysisDialog):
-    def __init__(self, old_board, new_board, erase_paths, write_paths, config_file=DEFAULT_CONFIG_FILE):
+    def __init__(self, parent, config_file=DEFAULT_CONFIG_FILE):
         super(CompAnalysisDialog, self).__init__(None)
+
+        self.parent = parent
 
         self.config = configparser.ConfigParser()
         self.config.read(config_file)
         print(self.config.sections())
-        self.old_board = old_board
-        self.new_board = new_board
-        self.erase_paths = erase_paths
-        self.write_paths = write_paths
         
+        self.file_params = dict()
         self.user_params = dict()
 
         self.AddFileParams()
@@ -160,8 +170,11 @@ class CompAnalysisDialog(AnalysisDialog):
         self.PanelConfigParams.SetSizer(params_sizer)
         for category in CONFIG_FILE_PARAMS:
             cat_label = wx.StaticText(self.PanelConfigParams, label=f"---{category}---")
+            cat_label.SetFont( wx.Font( 9, wx.FONTFAMILY_SWISS, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_BOLD, False, "Arial" ) )
             params_sizer.Add(cat_label)
             
+            self.file_params[category] = dict()
+
             for param in CONFIG_FILE_PARAMS[category]:
                 param_info = CONFIG_FILE_PARAMS[category][param]
                 single_sizer = wx.BoxSizer(wx.HORIZONTAL)
@@ -171,7 +184,18 @@ class CompAnalysisDialog(AnalysisDialog):
                 unit_label = wx.StaticText(self.PanelConfigParams, 
                                            label=param_info["Unit"])
                 input_box = wx.TextCtrl(self.PanelConfigParams)
-                input_box.SetValue(self.config.get(category, param))
+
+                value = self.config.get(category, param)
+                self.file_params[category][param] = value
+
+                input_box.SetValue(value)
+
+                def text_chang_fn(event, c=category, p=param, i=input_box):
+                    self.file_params[c][p] = i.GetValue()
+                    # print("text changed", p, self.file_params[c][p])
+                input_box.Bind(wx.EVT_TEXT, text_chang_fn)
+
+                CONFIG_FILE_PARAMS[category][param]["TextCtrlRef"] = input_box
 
                 if param_info["Unit"] == "$":
                     single_sizer.Add(unit_label)
@@ -218,7 +242,33 @@ class CompAnalysisDialog(AnalysisDialog):
 
         self.Layout()
 
-    def CalcResources(self):
+    def SaveParameters(self, event):
+        config = configparser.ConfigParser()
+        for category in self.file_params:
+            config[category] = self.file_params[category]
+
+        with open(DEFAULT_CONFIG_FILE, 'w') as con_file:
+            config.write(con_file)
+            # con_file.write("AAA")
+
+        self.parent.AddToLog(F"Saved parameters to {DEFAULT_CONFIG_FILE}")
+
+    def RestoreDefaults(self, event):
+        for category in CONFIG_FILE_PARAMS:
+            for param in CONFIG_FILE_PARAMS[category]:
+                default_val = CONFIG_FILE_PARAMS[category][param]["Default"]
+                self.file_params[category][param] = default_val
+                CONFIG_FILE_PARAMS[category][param]["TextCtrlRef"].SetValue(str(default_val))
+
+        self.Layout()
+        pass
+
+    def CalcResources(self, old_board, new_board, erase_paths, write_paths):
+        self.old_board = old_board
+        self.new_board = new_board
+        self.erase_paths = erase_paths
+        self.write_paths = write_paths
+
         time = self.CalcTime()
         epoxy, copper, fiberglass = self.CalcMaterial()
         price = self.CalcPrice()
@@ -231,8 +281,8 @@ Time Saved = {time}\nEpoxy Used = {epoxy}\nCopper Saved = {copper}\nFiberglass S
         pass
 
     def CalcTime(self):
-        dep_fr = float(self.config.get("Deposition", "deposition_feedrate"))
-        eng_fr = float(self.config.get("Engraving", "engraving_feedrate"))
+        dep_fr = float(self.file_params["Deposition"][ "deposition_feedrate"])
+        eng_fr = float(self.file_params["Engraving"]["engraving_feedrate"])
 
         self.original_time = (NEW_BOARD_PATH_LEN * eng_fr)
         original_time_min = (NEW_BOARD_PATH_LEN * eng_fr) / 60
@@ -245,39 +295,46 @@ Time Saved = {time}\nEpoxy Used = {epoxy}\nCopper Saved = {copper}\nFiberglass S
         pass
     
     def CalcMaterial(self):
-        epoxy_diameter = float(self.config.get("Deposition", "diameter"))
+        epoxy_diameter = float(self.file_params["Deposition"]["diameter"])
         epoxy_volume = float(self.user_params["groove_depth"]) * epoxy_diameter * ERASE_PATH_LEN
         self.epoxy_volume = epoxy_volume
 
-        copper_per_ft2 = float(self.config.get("Material", "copper_thickness")) 
-        fbr_thickness = float(self.config.get("Material", "fiberglass_thickness"))
-        fbr_density = float(self.config.get("Material", "fiberglass_density"))
+        copper_per_ft2 = float(self.file_params["Material"]["copper_thickness"]) 
+        fbr_thickness = float(self.file_params["Material"]["fiberglass_thickness"])
+        fbr_density = float(self.file_params["Material"]["fiberglass_density"])
 
         original_area = self.new_board.edge.get_area_mm() * MM2_TO_FT2
 
-        copper_weight = copper_per_ft2 * original_area
+        copper_weight = copper_per_ft2 * original_area * OZ_TO_G
         fbr_weight = original_area * fbr_thickness * fbr_density
 
-        return f"{format_float(epoxy_volume)} ml", f"{format_float(copper_weight)} oz", f"{format_float(fbr_weight)} g"
+        return f"{format_float(epoxy_volume)} ml", f"{format_float(copper_weight)} g", f"{format_float(fbr_weight)} g"
         pass
 
     def CalcPrice(self):
         # Maybe just do price per ml?
-        epoxy_density = float(self.config.get("Material", "epoxy_density"))
-        epoxy_price = float(self.config.get("Material", "epoxy_price"))
-        fr4_price = float(self.config.get("Material", "fr4_price"))
+        epoxy_density = float(self.file_params["Material"]["epoxy_density"])
+        epoxy_price = float(self.file_params["Price"]["epoxy_price"])
+        fr4_price = float(self.file_params["Price"]["fr4_price"])
         erase_n_write_price = self.epoxy_volume * epoxy_price
         original_price = fr4_price
         return f"${format_float(original_price)} - ${format_float(erase_n_write_price)} = ${format_float(original_price - erase_n_write_price)}"
         pass
     
     def CalcEnergy(self):
-        dep_wtt = float(self.config.get("Deposition", "deposition_wattage"))
-        eng_wtt = float(self.config.get("Engraving", "engraving_wattage"))
+        dep_wtt = float(self.file_params["Deposition"]["deposition_wattage"])
+        eng_wtt = float(self.file_params["Engraving"]["engraving_wattage"])
         original_energy = eng_wtt * self.original_time
         erase_n_write_energy = (eng_wtt * self.write_time) + (dep_wtt * self.erase_time)
         return f"{format_float(original_energy)} J - {format_float(erase_n_write_energy)} J = {format_float(original_energy - erase_n_write_energy)} J"
         pass
 
+    def OKClicked(self, event):
+        # self.EndModal(wx.ID_OK)
+        self.Hide()
+
     def OnClose(self, event):
-        self.Destroy()
+        # self.Destroy()
+        # self.EndModal(wx.ID_OK)
+        self.Hide()
+        pass

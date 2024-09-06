@@ -9,7 +9,6 @@
 
 import wx
 import wx.xrc
-import wx.grid
 
 ###########################################################################
 ## Class AnalysisDialog
@@ -47,44 +46,19 @@ class AnalysisDialog ( wx.Dialog ):
 
 		bSizer16.Add( bSizer17, 1, wx.EXPAND, 5 )
 
-		self.GridAnalysis = wx.grid.Grid( self, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, 0 )
+		bSizer19 = wx.BoxSizer( wx.HORIZONTAL )
 
-		# Grid
-		self.GridAnalysis.CreateGrid( 3, 4 )
-		self.GridAnalysis.EnableEditing( True )
-		self.GridAnalysis.EnableGridLines( True )
-		self.GridAnalysis.EnableDragGridSize( False )
-		self.GridAnalysis.SetMargins( 0, 0 )
+		self.ButtonSaveParams = wx.Button( self, wx.ID_ANY, u"Save Parameters to File", wx.DefaultPosition, wx.DefaultSize, 0 )
+		bSizer19.Add( self.ButtonSaveParams, 0, wx.ALIGN_CENTER_VERTICAL|wx.ALL, 5 )
 
-		# Columns
-		self.GridAnalysis.EnableDragColMove( False )
-		self.GridAnalysis.EnableDragColSize( True )
-		self.GridAnalysis.SetColLabelValue( 0, u"Time" )
-		self.GridAnalysis.SetColLabelValue( 1, u"Material" )
-		self.GridAnalysis.SetColLabelValue( 2, u"Price" )
-		self.GridAnalysis.SetColLabelValue( 3, u"Energy" )
-		self.GridAnalysis.SetColLabelValue( 4, wx.EmptyString )
-		self.GridAnalysis.SetColLabelValue( 5, wx.EmptyString )
-		self.GridAnalysis.SetColLabelSize( wx.grid.GRID_AUTOSIZE )
-		self.GridAnalysis.SetColLabelAlignment( wx.ALIGN_CENTER, wx.ALIGN_CENTER )
+		self.ButtonDefaultParams = wx.Button( self, wx.ID_ANY, u"Restore Defaults", wx.DefaultPosition, wx.DefaultSize, 0 )
+		bSizer19.Add( self.ButtonDefaultParams, 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5 )
 
-		# Rows
-		self.GridAnalysis.AutoSizeRows()
-		self.GridAnalysis.EnableDragRowSize( True )
-		self.GridAnalysis.SetRowLabelValue( 0, u"Using Blank Board" )
-		self.GridAnalysis.SetRowLabelValue( 1, u"Using Current Board" )
-		self.GridAnalysis.SetRowLabelValue( 2, u"Resources Saved" )
-		self.GridAnalysis.SetRowLabelValue( 3, wx.EmptyString )
-		self.GridAnalysis.SetRowLabelValue( 4, wx.EmptyString )
-		self.GridAnalysis.SetRowLabelValue( 5, wx.EmptyString )
-		self.GridAnalysis.SetRowLabelSize( wx.grid.GRID_AUTOSIZE )
-		self.GridAnalysis.SetRowLabelAlignment( wx.ALIGN_CENTER, wx.ALIGN_CENTER )
+		self.ButtonOK = wx.Button( self, wx.ID_ANY, u"OK", wx.DefaultPosition, wx.DefaultSize, 0 )
+		bSizer19.Add( self.ButtonOK, 0, wx.ALL, 5 )
 
-		# Label Appearance
 
-		# Cell Defaults
-		self.GridAnalysis.SetDefaultCellAlignment( wx.ALIGN_LEFT, wx.ALIGN_TOP )
-		bSizer16.Add( self.GridAnalysis, 0, wx.ALL|wx.ALIGN_CENTER_HORIZONTAL, 5 )
+		bSizer16.Add( bSizer19, 0, wx.ALIGN_RIGHT, 5 )
 
 
 		self.SetSizer( bSizer16 )
@@ -94,6 +68,9 @@ class AnalysisDialog ( wx.Dialog ):
 
 		# Connect Events
 		self.Bind( wx.EVT_CLOSE, self.OnClose )
+		self.ButtonSaveParams.Bind( wx.EVT_BUTTON, self.SaveParameters )
+		self.ButtonDefaultParams.Bind( wx.EVT_BUTTON, self.RestoreDefaults )
+		self.ButtonOK.Bind( wx.EVT_BUTTON, self.OKClicked )
 
 	def __del__( self ):
 		pass
@@ -101,6 +78,15 @@ class AnalysisDialog ( wx.Dialog ):
 
 	# Virtual event handlers, override them in your derived class
 	def OnClose( self, event ):
+		event.Skip()
+
+	def SaveParameters( self, event ):
+		event.Skip()
+
+	def RestoreDefaults( self, event ):
+		event.Skip()
+
+	def OKClicked( self, event ):
 		event.Skip()
 
 

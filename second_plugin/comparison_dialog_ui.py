@@ -123,9 +123,6 @@ class ComparisonOptionsDialog ( wx.Dialog ):
 
 		bSizer2.Add( bSizer16, 2, wx.ALIGN_RIGHT, 5 )
 
-		self.ButtonCompare = wx.Button( self.PanelCompLayers, wx.ID_ANY, u"Compare and Export", wx.DefaultPosition, wx.DefaultSize, 0 )
-		bSizer2.Add( self.ButtonCompare, 0, wx.ALL|wx.ALIGN_RIGHT, 5 )
-
 
 		self.PanelCompLayers.SetSizer( bSizer2 )
 		self.PanelCompLayers.Layout()
@@ -152,8 +149,11 @@ class ComparisonOptionsDialog ( wx.Dialog ):
 
 		bSizer21 = wx.BoxSizer( wx.HORIZONTAL )
 
-		self.ButtonAnalysis = wx.Button( self.PanelAll, wx.ID_ANY, u"Run Analysis", wx.DefaultPosition, wx.DefaultSize, 0 )
-		bSizer21.Add( self.ButtonAnalysis, 0, wx.ALL, 5 )
+		self.ButtonEditParams = wx.Button( self.PanelAll, wx.ID_ANY, u"Edit Analysis Params", wx.DefaultPosition, wx.DefaultSize, 0 )
+		bSizer21.Add( self.ButtonEditParams, 0, wx.ALL, 5 )
+
+		self.ButtonCompare = wx.Button( self.PanelAll, wx.ID_ANY, u"Compare and Export", wx.DefaultPosition, wx.DefaultSize, 0 )
+		bSizer21.Add( self.ButtonCompare, 0, wx.ALL, 5 )
 
 		self.ButtonOK = wx.Button( self.PanelAll, wx.ID_ANY, u"Exit and Open in Kicad", wx.DefaultPosition, wx.DefaultSize, 0 )
 		bSizer21.Add( self.ButtonOK, 0, wx.ALL, 5 )
@@ -182,8 +182,8 @@ class ComparisonOptionsDialog ( wx.Dialog ):
 		self.ButtonUseCurrBoard.Bind( wx.EVT_BUTTON, self.UseCurrentBoard )
 		self.ButtonNewFileUpload.Bind( wx.EVT_BUTTON, self.UploadNewFile )
 		self.rbCompMethod.Bind( wx.EVT_RADIOBOX, self.ComparisonMethodChanged )
+		self.ButtonEditParams.Bind( wx.EVT_BUTTON, self.EditParams )
 		self.ButtonCompare.Bind( wx.EVT_BUTTON, self.CompareBoards )
-		self.ButtonAnalysis.Bind( wx.EVT_BUTTON, self.RunAnalysis )
 		self.ButtonOK.Bind( wx.EVT_BUTTON, self.OKClicked )
 
 	def __del__( self ):
@@ -206,10 +206,10 @@ class ComparisonOptionsDialog ( wx.Dialog ):
 	def ComparisonMethodChanged( self, event ):
 		event.Skip()
 
-	def CompareBoards( self, event ):
+	def EditParams( self, event ):
 		event.Skip()
 
-	def RunAnalysis( self, event ):
+	def CompareBoards( self, event ):
 		event.Skip()
 
 	def OKClicked( self, event ):

@@ -27,6 +27,7 @@ class BoardComparisonWindow(ComparisonOptionsDialog):
         self.comparison_method = "component"
         self.export_data = []
         self.log_sizer = None
+        self.analysis_dialog = CompAnalysisDialog(self)
 
         self.DialogInit()
 
@@ -74,6 +75,9 @@ class BoardComparisonWindow(ComparisonOptionsDialog):
 
     def OnClose(self, event):
         self.DestroyChildren()
+
+        if self.analysis_dialog:
+            self.analysis_dialog.Destroy()
         self.Destroy()
     
     def AddToLog(self, log_text):
@@ -279,6 +283,8 @@ class BoardComparisonWindow(ComparisonOptionsDialog):
                                  parent_board_name="Old Board", edge_cut_poly=erase_edges)
         self.board_vis.PlotBoard(self.new_board, WRITE_NAME, path_dict=write_paths, 
                                  parent_board_name="New Board", edge_cut_poly=write_edges)
+        
+        self.RunAnalysis(erase_paths=erase_paths, write_paths=write_paths)
         self.Layout()
         
 
@@ -286,12 +292,15 @@ class BoardComparisonWindow(ComparisonOptionsDialog):
         self.new_board.export_files()
         self.AddToLog(f"Files exported to {self.new_board.comp_folder_path}")
         pass
+    
+    def EditParams(self, event):
+        # self.analysis_dialog = CompAnalysisDialog()
+        self.analysis_dialog.ShowModal()
 
-    def RunAnalysis(self, event):
-        self.comp_dialog = CompAnalysisDialog(self.old_board, self.new_board, self.erase_paths, self.write_paths)
+    def RunAnalysis(self, erase_paths, write_paths):
+        # self.analysis_dialog = CompAnalysisDialog(self.old_board, self.new_board, self.erase_paths, self.write_paths)
         # self.comp_dialog.ShowModal()
-        text = self.comp_dialog.CalcResources()
-        self.comp_dialog.Destroy()
+        text = self.analysis_dialog.CalcResources(self.old_board, self.new_board, erase_paths, write_paths)
         self.AddToLog(text)
         pass
 
