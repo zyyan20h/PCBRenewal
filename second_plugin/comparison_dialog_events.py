@@ -43,13 +43,19 @@ class BoardComparisonWindow(ComparisonOptionsDialog):
 
         self.choiceOldAlign = wx.Choice(self.PanelAlignBoards)
         self.choiceNewAlign = wx.Choice(self.PanelAlignBoards)
+        self.labelOldAlign = wx.StaticText(self.PanelAlignBoards, label="Old Board")
+        self.labelNewAlign = wx.StaticText(self.PanelAlignBoards, label="New Board")
         choice_sizer = wx.BoxSizer(wx.VERTICAL)
+        choice_sizer.Add(self.labelOldAlign)
         choice_sizer.Add(self.choiceOldAlign)
+        choice_sizer.Add(self.labelNewAlign)
         choice_sizer.Add(self.choiceNewAlign)
         align_sizer.Add(choice_sizer)
 
         self.choiceAlignCorner = wx.Choice(self.PanelAlignBoards, choices=ALIGN_CORNER_CHOICES)
+        self.labelAlignCorner = wx.StaticText(self.PanelAlignBoards, label="Corner")
         self.choiceAlignCorner.SetSelection(0)
+        align_sizer.Add(self.labelAlignCorner)
         align_sizer.Add(self.choiceAlignCorner)
 
         self.buttonAlignBoards = wx.Button(self.PanelAlignBoards, label="Align")
@@ -60,7 +66,10 @@ class BoardComparisonWindow(ComparisonOptionsDialog):
 
         self.choiceNewAlign.Hide()
         self.choiceOldAlign.Hide()
+        self.labelNewAlign.Hide()
+        self.labelOldAlign.Hide()
         self.choiceAlignCorner.Hide()
+        self.labelAlignCorner.Hide()
 
         self.rbAlignMethod.Bind(wx.EVT_RADIOBOX, self.AlignMethodChanged)
 
@@ -180,16 +189,25 @@ class BoardComparisonWindow(ComparisonOptionsDialog):
             self.choiceAlignCorner.Hide()
             self.choiceNewAlign.Hide()
             self.choiceOldAlign.Hide()
+            self.labelNewAlign.Hide()
+            self.labelOldAlign.Hide()
+            self.labelAlignCorner.Hide()
 
         elif self.align_method == "Edge":
             self.choiceAlignCorner.Show()
             self.choiceNewAlign.Show()
             self.choiceOldAlign.Show()
+            self.labelNewAlign.Show()
+            self.labelOldAlign.Show()
+            self.labelAlignCorner.Show()
 
         elif self.align_method == "Component":
             self.choiceAlignCorner.Hide()
+            self.labelAlignCorner.Hide()
             self.choiceNewAlign.Show()
-            self.choiceOldAlign.Show() 
+            self.choiceOldAlign.Show()
+            self.labelNewAlign.Show()
+            self.labelOldAlign.Show() 
 
         self.UpdateAlignChoices()
         self.Layout()

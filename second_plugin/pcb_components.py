@@ -550,7 +550,6 @@ class PcbBoard():
 
         # For each layer, compar the paths
         for layer in selected_layers:
-            print(f"old path {old_path_dict}")
             if layer in old_path_dict:
                 old_path = old_path_dict[layer]
                 new_path = new_path_dict[layer]
