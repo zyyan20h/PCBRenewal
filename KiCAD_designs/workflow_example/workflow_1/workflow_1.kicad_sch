@@ -727,13 +727,13 @@
     (effects (font (size 1.27 1.27)) (justify left bottom))
     (uuid e774d9ae-2385-49a3-9ce8-7472b12092d6)
   )
-  (label "LED" (at 74.93 74.93 180) (fields_autoplaced)
-    (effects (font (size 1.27 1.27)) (justify right bottom))
-    (uuid ebf37a82-cdab-4aad-a7b0-99e2036db7bd)
-  )
   (label "GND" (at 125.095 93.345 180) (fields_autoplaced)
     (effects (font (size 1.27 1.27)) (justify right bottom))
     (uuid f170381e-5993-48a2-96a0-f6e630b82a1f)
+  )
+  (label "LED" (at 74.93 77.47 180) (fields_autoplaced)
+    (effects (font (size 1.27 1.27)) (justify right bottom))
+    (uuid f55de801-ce87-4c1c-b7f9-669c217c6ef3)
   )
 
   (symbol (lib_id "Device:LED") (at 140.97 85.09 0) (unit 1)
@@ -754,7 +754,7 @@
     (pin "1" (uuid b039362d-28c8-4c9c-81d5-628bed066b4c))
     (pin "2" (uuid b298b862-cb29-4af0-a1e4-c8f38457af4f))
     (instances
-      (project "workflow"
+      (project "workflow_1"
         (path "/f73d03d9-3aa3-47b4-8285-cbe7ff2a4073"
           (reference "D1") (unit 1)
         )
@@ -780,7 +780,7 @@
     (pin "1" (uuid 48039bde-ab66-472d-8f20-37664e61f47e))
     (pin "2" (uuid 9609a3de-d756-4df1-a659-1f21ca757cb9))
     (instances
-      (project "workflow"
+      (project "workflow_1"
         (path "/f73d03d9-3aa3-47b4-8285-cbe7ff2a4073"
           (reference "R1") (unit 1)
         )
@@ -806,7 +806,7 @@
     (pin "1" (uuid 13fb3c6f-212e-4d8e-80b4-ae073fa15b7c))
     (pin "2" (uuid 3cbdfaee-9c8b-44bd-9175-e14878bdcf61))
     (instances
-      (project "workflow"
+      (project "workflow_1"
         (path "/f73d03d9-3aa3-47b4-8285-cbe7ff2a4073"
           (reference "J1") (unit 1)
         )
@@ -833,7 +833,7 @@
     (pin "2" (uuid c824bccf-e448-47e9-8ab9-5dc09770502e))
     (pin "1" (uuid 8109ad72-0a85-4f38-9a75-aa4b35650939))
     (instances
-      (project "workflow"
+      (project "workflow_1"
         (path "/f73d03d9-3aa3-47b4-8285-cbe7ff2a4073"
           (reference "SW1") (unit 1)
         )
@@ -889,7 +889,7 @@
     (pin "6" (uuid 2aa84c4d-8cb3-4b95-be02-2bf615a83a81))
     (pin "3" (uuid 9716b245-6607-400e-a593-ff5ffe4b4523))
     (instances
-      (project "workflow"
+      (project "workflow_1"
         (path "/f73d03d9-3aa3-47b4-8285-cbe7ff2a4073"
           (reference "U1") (unit 1)
         )
