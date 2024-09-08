@@ -380,7 +380,7 @@ class PcbBoard():
         self.offset_vec = pcbnew.VECTOR2I(0,0)
 
         self.holes = []
-        self.edge = get_selection()
+        # self.edge = get_selection()
         self.edge_cut_shapes = None
 
         self.export_board = None
@@ -418,6 +418,7 @@ class PcbBoard():
 
         self.edge_cut_shapes = [(name, start + offset, end + offset, edge) for (name, start, end, edge) in self.edge_cut_shapes]
         self.footprint_names = [(name, pos + offset, f) for (name, pos, f) in self.footprint_names]
+        self.edge.offset(offset=offset)
         print("updated offsets and footprint positions")
         pass
 

@@ -275,6 +275,9 @@ class EdgeCollection:
         # print("combined", combined)
         return combined
     
+    def offset(self, offset):
+        self.edge_polygon = transform(self.edge_polygon, lambda x: x + offset)
+
     def edge_difference(self, other_edge):
         diff = self.edge_polygon.difference(other_edge.edge_polygon)
         return EdgeCollection(shape=diff)
