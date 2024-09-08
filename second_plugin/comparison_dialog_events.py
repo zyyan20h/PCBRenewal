@@ -32,8 +32,8 @@ class BoardComparisonWindow(ComparisonOptionsDialog):
         self.DialogInit()
 
     def DialogInit(self):
-        op_sizer = self.PanelOperations.GetSizer()
-        self.board_vis = BoardVisPanel( self.PanelOperations, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, wx.TAB_TRAVERSAL )
+        op_sizer = self.PanelFeatures.GetSizer()
+        self.board_vis = BoardVisPanel( self.PanelFeatures, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, wx.TAB_TRAVERSAL )
         op_sizer.Add(self.board_vis, 2, wx.EXPAND | wx.ALL, 5)
 
         align_sizer = wx.BoxSizer(wx.VERTICAL)
@@ -482,8 +482,11 @@ class BoardVisPanel(wx.Panel):
 
         self.AddBoardLayerControls(board_name, parent_board_name)
         self.SetDisplayOrder()
-        self.canvas.Draw(True)
         self.canvas.ZoomToBB()
+        self.canvas.Draw(True)
+
+        self.canvas.ZoomToBB()
+        
 
     def RemoveBoard(self, board_name):
         # if board_name in 

@@ -17,23 +17,26 @@ import wx.xrc
 class ComparisonOptionsDialog ( wx.Dialog ):
 
 	def __init__( self, parent ):
-		wx.Dialog.__init__ ( self, parent, id = wx.ID_ANY, title = u"Compare Boards", pos = wx.DefaultPosition, size = wx.Size( 714,814 ), style = wx.DEFAULT_DIALOG_STYLE|wx.RESIZE_BORDER )
+		wx.Dialog.__init__ ( self, parent, id = wx.ID_ANY, title = u"Compare Boards", pos = wx.DefaultPosition, size = wx.Size( 1342,747 ), style = wx.DEFAULT_DIALOG_STYLE|wx.RESIZE_BORDER )
 
 		self.SetSizeHints( wx.DefaultSize, wx.DefaultSize )
 
 		bSizer6 = wx.BoxSizer( wx.VERTICAL )
 
 		self.PanelAll = wx.Panel( self, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, wx.TAB_TRAVERSAL )
-		bSizer14 = wx.BoxSizer( wx.HORIZONTAL )
+		bSizer14 = wx.BoxSizer( wx.VERTICAL )
+
+		self.PanelFeatures = wx.Panel( self.PanelAll, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, wx.TAB_TRAVERSAL )
+		bSizer22 = wx.BoxSizer( wx.HORIZONTAL )
 
 		bSizer4 = wx.BoxSizer( wx.VERTICAL )
 
-		sbSizerOldFile = wx.StaticBoxSizer( wx.StaticBox( self.PanelAll, wx.ID_ANY, u"Old Board" ), wx.VERTICAL )
+		sbSizerOldFile = wx.StaticBoxSizer( wx.StaticBox( self.PanelFeatures, wx.ID_ANY, u"Old Board" ), wx.VERTICAL )
 
 		self.PanelOldFileUpload = wx.Panel( sbSizerOldFile.GetStaticBox(), wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, wx.TAB_TRAVERSAL )
 		bSizer7 = wx.BoxSizer( wx.HORIZONTAL )
 
-		self.LabelOldFilePath = wx.StaticText( self.PanelOldFileUpload, wx.ID_ANY, u"*File Not Selected*", wx.DefaultPosition, wx.DefaultSize, 0 )
+		self.LabelOldFilePath = wx.StaticText( self.PanelOldFileUpload, wx.ID_ANY, u"*File Not Selected*", wx.DefaultPosition, wx.DefaultSize, wx.ST_ELLIPSIZE_START|wx.ST_NO_AUTORESIZE )
 		self.LabelOldFilePath.SetLabelMarkup( u"*File Not Selected*" )
 		self.LabelOldFilePath.Wrap( -1 )
 
@@ -53,17 +56,17 @@ class ComparisonOptionsDialog ( wx.Dialog ):
 
 		bSizer4.Add( sbSizerOldFile, 0, wx.EXPAND, 5 )
 
-		sbSizerNewFile = wx.StaticBoxSizer( wx.StaticBox( self.PanelAll, wx.ID_ANY, u"New Board" ), wx.VERTICAL )
+		sbSizerNewFile = wx.StaticBoxSizer( wx.StaticBox( self.PanelFeatures, wx.ID_ANY, u"New Board" ), wx.VERTICAL )
 
 		self.PanelNewFileUpload = wx.Panel( sbSizerNewFile.GetStaticBox(), wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, wx.TAB_TRAVERSAL )
 		bSizer9 = wx.BoxSizer( wx.HORIZONTAL )
 
-		self.LabelNewFilePath = wx.StaticText( self.PanelNewFileUpload, wx.ID_ANY, u"*File Not Selected*", wx.DefaultPosition, wx.DefaultSize, 0 )
+		self.LabelNewFilePath = wx.StaticText( self.PanelNewFileUpload, wx.ID_ANY, u"*File Not Selected*", wx.DefaultPosition, wx.DefaultSize, wx.ST_ELLIPSIZE_START|wx.ST_NO_AUTORESIZE )
 		self.LabelNewFilePath.Wrap( -1 )
 
 		self.LabelNewFilePath.SetFont( wx.Font( 9, wx.FONTFAMILY_SWISS, wx.FONTSTYLE_ITALIC, wx.FONTWEIGHT_NORMAL, False, "Arial" ) )
 
-		bSizer9.Add( self.LabelNewFilePath, 9, wx.ALL|wx.ALIGN_CENTER_HORIZONTAL|wx.ALIGN_CENTER_VERTICAL, 5 )
+		bSizer9.Add( self.LabelNewFilePath, 9, wx.ALL, 5 )
 
 		self.ButtonUseCurrBoard = wx.Button( self.PanelNewFileUpload, wx.ID_ANY, u"Use Current Board", wx.DefaultPosition, wx.DefaultSize, 0 )
 		bSizer9.Add( self.ButtonUseCurrBoard, 0, wx.ALIGN_CENTER_VERTICAL|wx.ALL, 5 )
@@ -80,7 +83,7 @@ class ComparisonOptionsDialog ( wx.Dialog ):
 
 		bSizer4.Add( sbSizerNewFile, 0, wx.EXPAND, 5 )
 
-		self.PanelOperations = wx.Panel( self.PanelAll, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, wx.TAB_TRAVERSAL )
+		self.PanelOperations = wx.Panel( self.PanelFeatures, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, wx.TAB_TRAVERSAL )
 		bSizer15 = wx.BoxSizer( wx.HORIZONTAL )
 
 		bSizer13 = wx.BoxSizer( wx.VERTICAL )
@@ -141,11 +144,20 @@ class ComparisonOptionsDialog ( wx.Dialog ):
 		bSizer15.Fit( self.PanelOperations )
 		bSizer4.Add( self.PanelOperations, 1, wx.EXPAND |wx.ALL, 0 )
 
+
+		bSizer22.Add( bSizer4, 1, wx.EXPAND, 5 )
+
+
+		self.PanelFeatures.SetSizer( bSizer22 )
+		self.PanelFeatures.Layout()
+		bSizer22.Fit( self.PanelFeatures )
+		bSizer14.Add( self.PanelFeatures, 1, wx.EXPAND |wx.ALL, 5 )
+
 		self.PanelLog = wx.ScrolledWindow( self.PanelAll, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, wx.HSCROLL|wx.VSCROLL )
 		self.PanelLog.SetScrollRate( 5, 5 )
 		self.PanelLog.SetMinSize( wx.Size( 75,75 ) )
 
-		bSizer4.Add( self.PanelLog, 0, wx.ALL|wx.EXPAND, 5 )
+		bSizer14.Add( self.PanelLog, 0, wx.ALL|wx.EXPAND, 5 )
 
 		bSizer21 = wx.BoxSizer( wx.HORIZONTAL )
 
@@ -159,10 +171,7 @@ class ComparisonOptionsDialog ( wx.Dialog ):
 		bSizer21.Add( self.ButtonOK, 0, wx.ALL, 5 )
 
 
-		bSizer4.Add( bSizer21, 0, wx.ALIGN_RIGHT, 5 )
-
-
-		bSizer14.Add( bSizer4, 1, wx.EXPAND, 5 )
+		bSizer14.Add( bSizer21, 0, wx.ALIGN_RIGHT, 5 )
 
 
 		self.PanelAll.SetSizer( bSizer14 )

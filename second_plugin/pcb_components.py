@@ -573,8 +573,8 @@ class PcbBoard():
 
         for layer in selected_layers:
             # Making sure changes to these lists don't affect the originals
-            old_net_list = old_board.net_dict[layer] if layer in old_board.net_dict else []
-            write_net_dict[layer] = self.net_dict[layer] if layer in self.net_dict else []
+            old_net_list = old_board.net_dict[layer].copy() if layer in old_board.net_dict else []
+            write_net_dict[layer] = self.net_dict[layer].copy() if layer in self.net_dict else []
             erase_net_dict[layer] = []
 
             for old_ind, old_net in enumerate(old_net_list):
