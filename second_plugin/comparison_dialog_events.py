@@ -295,6 +295,7 @@ class BoardComparisonWindow(ComparisonOptionsDialog):
         self.AddToLog("Boards compared")
         self.erase_paths = erase_paths
         self.write_paths = write_paths
+        # self.erase_edges = erase_edges
         # self.board_vis.RemoveBoard(ERASE_NAME)
         # self.board_vis.RemoveBoard(WRITE_NAME)
         self.board_vis.PlotBoard(self.old_board, ERASE_NAME, path_dict=erase_paths, 
@@ -302,7 +303,7 @@ class BoardComparisonWindow(ComparisonOptionsDialog):
         self.board_vis.PlotBoard(self.new_board, WRITE_NAME, path_dict=write_paths, 
                                  parent_board_name="New Board", edge_cut_poly=write_edges)
         
-        self.RunAnalysis(erase_paths=erase_paths, write_paths=write_paths)
+        self.RunAnalysis(erase_paths=erase_paths, write_paths=write_paths, erase_edges=erase_edges)
         self.Layout()
         
 
@@ -315,10 +316,10 @@ class BoardComparisonWindow(ComparisonOptionsDialog):
         # self.analysis_dialog = CompAnalysisDialog()
         self.analysis_dialog.ShowModal()
 
-    def RunAnalysis(self, erase_paths, write_paths):
+    def RunAnalysis(self, erase_paths, write_paths, erase_edges):
         # self.analysis_dialog = CompAnalysisDialog(self.old_board, self.new_board, self.erase_paths, self.write_paths)
         # self.comp_dialog.ShowModal()
-        text = self.analysis_dialog.CalcResources(self.old_board, self.new_board, erase_paths, write_paths)
+        text = self.analysis_dialog.CalcResources(self.old_board, self.new_board, erase_paths, write_paths, erase_edges)
         self.AddToLog(text)
         pass
 

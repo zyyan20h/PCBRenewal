@@ -200,9 +200,11 @@ class NetCollection:
         
         return self.net_path_polygon
 
+    def get_area_mm(self):
+        return self.polygonize_paths().area / (IU_PER_MM * IU_PER_MM)
 
-    def get_path_length(self):
-        return self.combined_net_paths.length
+    def get_length_mm(self):
+        return self.combined_net_paths.length / IU_PER_MM
 
     # Returns list of polygons created out of paths
     def get_poly_list(self):
@@ -248,8 +250,9 @@ class NetCollection:
         pass
 
 class EdgeCollection:
-    def __init__(self, edge_cut_shapes=None, board=None, shape=None):
+    def __init__(self, edge_cut_shapes=None, board=None, shape=None, cut_length=0):
         self.board = board
+        self.cut_length = cut_length
         
         if edge_cut_shapes:
             self.edge_polygon = self.create_edge_polygon(edge_cut_shapes)
@@ -278,12 +281,25 @@ class EdgeCollection:
     def offset(self, offset):
         self.edge_polygon = transform(self.edge_polygon, lambda x: x + offset)
 
+    def get_outline(self):
+        outline = None
+        if type(self.edge_polygon) == MultiPolygon:
+            outline = union_all([s.exterior for s in self.edge_polygon.geoms])
+        else:
+            outline = self.edge_polygon.exterior
+        return outline
+
     def edge_difference(self, other_edge):
         diff = self.edge_polygon.difference(other_edge.edge_polygon)
-        return EdgeCollection(shape=diff)
+        #The line that would be cut to make an edge into another edge
+        cut_length = (other_edge.get_outline().difference(self.get_outline())).length / IU_PER_MM
+        return EdgeCollection(shape=diff, cut_length=cut_length)
     
     def get_area_mm(self):
         return self.edge_polygon.area / (IU_PER_MM * IU_PER_MM)
+    
+    def get_length_mm(self):
+        return self.edge_polygon.length / IU_PER_MM
     
     def get_poly_points(self):
         if type(self.edge_polygon) == Polygon:
