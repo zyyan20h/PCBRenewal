@@ -17,7 +17,7 @@ import wx.xrc
 class ComparisonOptionsDialog ( wx.Dialog ):
 
 	def __init__( self, parent ):
-		wx.Dialog.__init__ ( self, parent, id = wx.ID_ANY, title = u"Compare Boards", pos = wx.DefaultPosition, size = wx.Size( 1464,1023 ), style = wx.DEFAULT_DIALOG_STYLE|wx.RESIZE_BORDER )
+		wx.Dialog.__init__ ( self, parent, id = wx.ID_ANY, title = u"Compare Boards", pos = wx.DefaultPosition, size = wx.Size( 1245,960 ), style = wx.DEFAULT_DIALOG_STYLE|wx.RESIZE_BORDER )
 
 		self.SetSizeHints( wx.DefaultSize, wx.DefaultSize )
 
@@ -118,9 +118,13 @@ class ComparisonOptionsDialog ( wx.Dialog ):
 		rbCompMethodChoices = [ u"Component", u"Line", u"Hybrid" ]
 		self.rbCompMethod = wx.RadioBox( self.PanelCompLayers, wx.ID_ANY, u"Comparison Method", wx.DefaultPosition, wx.DefaultSize, rbCompMethodChoices, 1, wx.RA_SPECIFY_COLS )
 		self.rbCompMethod.SetSelection( 0 )
+		self.rbCompMethod.Hide()
+
 		bSizer16.Add( self.rbCompMethod, 0, wx.ALL, 5 )
 
 		self.cbExportOriginal = wx.CheckBox( self.PanelCompLayers, wx.ID_ANY, u"Export Original Board", wx.DefaultPosition, wx.DefaultSize, 0 )
+		self.cbExportOriginal.Hide()
+
 		bSizer16.Add( self.cbExportOriginal, 0, wx.ALL, 5 )
 
 

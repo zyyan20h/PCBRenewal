@@ -374,7 +374,7 @@ Extra Time Used = {time}\nEpoxy Used = {epoxy}\nStencil Area Used = {stencil}\nF
         iter_num = int(self.user_params["iteration_number"])
 
         self.original_time = \
-            ((original_len * eng_depth) / (eng_fr * eng_stepdown)) +  ((original_out_length * board_thickness) / (out_fr * out_stepdown))
+            ((original_len / eng_fr) * math.ceil(eng_depth / eng_stepdown)) +  ((original_out_length / out_fr) * math.ceil(board_thickness / out_stepdown))
         original_time_min = self.original_time / 60
 
         self.curing_time = float(self.file_params["Curing Heater"]["epoxy_curing_time"])
@@ -386,7 +386,7 @@ Extra Time Used = {time}\nEpoxy Used = {epoxy}\nStencil Area Used = {stencil}\nF
         write_out_len = self.erase_edges.cut_length
         
         self.write_time = \
-            ((write_len * write_eng_depth) / (eng_fr * eng_stepdown)) + ((write_out_len * board_thickness) / (out_fr * out_stepdown))
+            ((write_len / eng_fr) * math.ceil(write_eng_depth / eng_stepdown)) + ((write_out_len / out_fr) * math.ceil(board_thickness / out_stepdown))
 
         renewal_time_min = (self.curing_time + self.stencil_time + self.deposition_time + self.write_time) / 60
 

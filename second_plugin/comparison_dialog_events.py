@@ -24,7 +24,8 @@ class BoardComparisonWindow(ComparisonOptionsDialog):
         self.erase_paths = None
         self.write_paths = None
         self.align_method = "None"
-        self.comparison_method = "component"
+        # self.comparison_method = "component"
+        self.comparison_method = "hybrid"
         self.export_data = []
         self.log_sizer = None
         self.analysis_dialog = CompAnalysisDialog(self)
