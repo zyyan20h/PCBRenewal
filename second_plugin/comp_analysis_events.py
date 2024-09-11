@@ -23,12 +23,12 @@ CONFIG_FILE_PARAMS = {
         "deposition_feedrate": {
             "FriendlyName":"Depostion Feedrate",
             "Unit":"mm/s",
-            "Default":1
+            "Default":3
         },
         "deposition_wattage": {
             "FriendlyName":"Depositon Wattage",
             "Unit":"W",
-            "Default":10
+            "Default":19
         }
     },
 
@@ -36,7 +36,7 @@ CONFIG_FILE_PARAMS = {
         "engraving_feedrate": {
             "FriendlyName":"Engraving Feedrate",
             "Unit":"mm/s",
-            "Default":20
+            "Default":5
         },
         # "plunge_amount": {
         #     "FriendlyName":"Plunge Amount",
@@ -46,7 +46,7 @@ CONFIG_FILE_PARAMS = {
         "engraving_wattage": {
             "FriendlyName":"Engraving Wattage",
             "Unit":"W",
-            "Default":100000
+            "Default":47
         },
         "engraving_stepdown": {
             "FriendlyName":"Engraving Stepdown",
@@ -59,12 +59,12 @@ CONFIG_FILE_PARAMS = {
         "outline_feedrate": {
             "FriendlyName":"Outline Cutting Feedrate",
             "Unit":"mm/s",
-            "Default":20
+            "Default":10
         },
         "outline_stepdown": {
             "FriendlyName":"Outline Cutting Stepdown",
             "Unit":"mm",
-            "Default":0.05
+            "Default":0.1
         },
     },
 
@@ -126,17 +126,17 @@ CONFIG_FILE_PARAMS = {
         "epoxy_price": {
             "FriendlyName":"Epoxy Price",
             "Unit":"$/g",
-            "Default":13.44
+            "Default":2.97
         },
         "fr4_price": {
             "FriendlyName":"FR4 Price",
-            "Unit":"$/mm2",
-            "Default":10.99
+            "Unit":"$/cm2",
+            "Default":1.27
         },
         "stencil_price": {
             "FriendlyName":"Stencil Price",
-            "Unit":"$/mm2",
-            "Default":0.99
+            "Unit":"$/m2",
+            "Default":14.90
         }
     }
 }
@@ -340,127 +340,116 @@ class CompAnalysisDialog(AnalysisDialog):
         self.write_paths = PathParams(path_dict=write_paths)
         self.erase_edges = erase_edges
 
-        original_time, renewal_time, time_diff = self.CalcTime()
-        epoxy_weight, stencil_area, fr4_area, weight_diff = self.CalcMaterial()
+        original_time_min, renewal_time_min, time_diff_min = self.CalcTime()
+        epoxy_weight_mg, stencil_area_mm2, fr4_area_mm2, weight_diff_mg = self.CalcMaterial()
         original_price, renewal_price, price_diff = self.CalcPrice()
-        original_energy, renewal_energy, energy_diff = self.CalcEnergy()
-#         text = f'''
-# =====Sustainability Evaluation=====
-# Time Saved = {time}\nEpoxy Used = {epoxy}\nCopper Saved = {copper}\nFiberglass Saved = {fiberglass}\nMoney Saved = {price}\nEnergy Saved = {energy}'''
+        original_energy_kJ, renewal_energy_kJ, energy_diff_kJ = self.CalcEnergy()
+
         text = f'''
 =====Sustainability Evaluation=====
-Material Saved = {weight_diff}
-    PCB Renewal Weight = {epoxy_weight}
-    New FR4 Weight = {format_float(self.original_weight)} mg
+Material Saved = {weight_diff_mg}
+    PCB Renewal Weight = {epoxy_weight_mg}
+    New FR4 Weight = {format_float(self.original_weight_g * 1000)} mg
 Money Saved = {price_diff}
     PCB Renewal Price = {renewal_price}
     New FR4 Price = {original_price}
-Time Saved = {time_diff}
-    PCB Renewal Time = {renewal_time}
-    New FR4 Time = {original_time}
-Energy Saved = {energy_diff}
-    PCB Renewal Energy = {renewal_energy}
-    New FR4 Energy = {original_energy}
+Time Saved = {time_diff_min}
+    PCB Renewal Time = {renewal_time_min}
+    New FR4 Time = {original_time_min}
+Energy Saved = {energy_diff_kJ}
+    PCB Renewal Energy = {renewal_energy_kJ}
+    New FR4 Energy = {original_energy_kJ}
 
 ========Itemized Consumption========
-Epoxy Used = {epoxy_weight}
-Stencil Area Used = {stencil_area}
-FR4 Area Saved = {fr4_area}
+Epoxy Used = {epoxy_weight_mg}
+Stencil Area Used = {stencil_area_mm2}
+FR4 Area Saved = {fr4_area_mm2}
 
-Epoxy Price = $ {format_float(self.epoxy_price)}
-Stencil Price = $ {format_float(self.stencil_price)}
+Epoxy Price = ${format_float(self.epoxy_price)}
+Stencil Price = ${format_float(self.stencil_price)}
 FR4 Price = {original_price}
 
-Deposition Time = {format_float(self.deposition_time / 60)} min
-Curing Time = {format_float(self.curing_time / 60)} min
-Laser Cutting Time = {format_float(self.stencil_time / 60)} min
-Renewal Engraving Time = {format_float(self.write_time / 60)} min
-New FR4 Engraving Time = {format_float(self.original_time / 60)} min
+Deposition Time = {format_float(self.deposition_time_s / 60)} min
+Curing Time = {format_float(self.curing_time_s / 60)} min
+Laser Cutting Time = {format_float(self.stencil_time_s / 60)} min
+Renewal Engraving Time = {format_float(self.write_time_s / 60)} min
+New FR4 Engraving Time = {format_float(self.original_time_s / 60)} min
 
-Deposition Energy = {format_float(self.deposition_energy)} J
-Curing Energy = {format_float(self.curing_energy)} J
-Laser Cutting Energy = {format_float(self.laser_energy)} J
-Renewal Engraving Energy = {format_float(self.renewal_engraving_energy)} J
-New FR4 Engraving Energy = {original_energy}
-'''
+Deposition Energy = {format_float(self.deposition_energy_J / 1000)} kJ
+Curing Energy = {format_float(self.curing_energy_J / 1000)} kJ
+Laser Cutting Energy = {format_float(self.laser_energy_J / 1000)} kJ
+Renewal Engraving Energy = {format_float(self.renewal_engraving_energy_J / 1000)} kJ
+New FR4 Engraving Energy = {original_energy_kJ}
+''' 
+        print(text)
         return text
         pass
 
     def CalcTime(self):
         dep_fr = float(self.file_params["Deposition"][ "deposition_feedrate"])
-        erase_len = self.erase_paths.total_path_length
+        erase_len_mm = self.erase_paths.total_path_length
 
         eng_fr = float(self.file_params["Engraving"]["engraving_feedrate"])
-        eng_stepdown = float(self.file_params["Engraving"]["engraving_stepdown"])
-        original_len = self.new_board.total_path_length
+        eng_stepdown_mm = float(self.file_params["Engraving"]["engraving_stepdown"])
+        original_len_mm = self.new_board.total_path_length
 
         out_fr = float(self.file_params["Outline"]["outline_feedrate"])
-        out_stepdown = float(self.file_params["Outline"]["outline_stepdown"])
-        original_out_length = self.new_board.edge_length
-        board_thickness = float(self.user_params["board_thickness"]) 
+        out_stepdown_mm = float(self.file_params["Outline"]["outline_stepdown"])
+        original_out_length_mm = self.new_board.edge_length
+        board_thickness_mm = float(self.user_params["board_thickness"]) 
 
         las_fr = float(self.file_params["Laser Cutter"]["laser_feedrate"])
 
         iter_num = int(self.user_params["iteration_number"])
-        groove_depth = float(self.user_params["groove_depth"])
+        groove_depth_mm = float(self.user_params["groove_depth"])
 
-        eng_depth = groove_depth + (0.05 * (iter_num - 1))
+        self.original_time_s = \
+            ((original_len_mm / eng_fr) * math.ceil(groove_depth_mm / eng_stepdown_mm)) + ((original_out_length_mm / eng_fr) * math.ceil(groove_depth_mm / eng_stepdown_mm)) + ((original_out_length_mm / out_fr) * math.ceil(board_thickness_mm / out_stepdown_mm)) 
+        
+        original_time_min = self.original_time_s / 60
 
-        print(f"original len = {original_len}")
+        self.curing_time_s = float(self.file_params["Curing Heater"]["epoxy_curing_time"])
+        self.stencil_time_s = erase_len_mm / las_fr
+        self.deposition_time_s = erase_len_mm / dep_fr
 
-        self.original_time = \
-            ((original_len / eng_fr) * math.ceil(eng_depth / eng_stepdown)) +  ((original_out_length / out_fr) * math.ceil(board_thickness / out_stepdown))
-        original_time_min = self.original_time / 60
-
-        self.curing_time = float(self.file_params["Curing Heater"]["epoxy_curing_time"])
-        self.stencil_time = self.erase_paths.total_path_length / las_fr
-        self.deposition_time = erase_len / dep_fr
-
-        write_eng_depth = eng_depth + (0.05 * (iter_num - 1))
+        write_eng_depth = groove_depth_mm + (0.05 * (iter_num - 1))
         write_len = self.write_paths.total_path_length
         write_out_len = self.erase_edges.cut_length
-
-        # print(f"{}")
         
-        self.write_time = \
-            ((write_len / eng_fr) * math.ceil(write_eng_depth / eng_stepdown)) + ((write_out_len / out_fr) * math.ceil(board_thickness / out_stepdown))
+        self.write_time_s = \
+            ((write_len / eng_fr) * math.ceil(write_eng_depth / eng_stepdown_mm)) + ((write_out_len / out_fr) * math.ceil(board_thickness_mm / out_stepdown_mm))
 
-        renewal_time_min = (self.curing_time + self.stencil_time + self.deposition_time + self.write_time) / 60
+        renewal_time_min = (self.curing_time_s + self.stencil_time_s + self.deposition_time_s + self.write_time_s) / 60
 
-        return f"{format_float(original_time_min)} min", f"{format_float(renewal_time_min)}", f"{format_float(original_time_min - renewal_time_min)} min"
+        return f"{format_float(original_time_min)} min", f"{format_float(renewal_time_min)} min", f"{format_float(original_time_min - renewal_time_min)} min"
         pass
     
     def CalcMaterial(self):
-        epoxy_density = float(self.file_params["Material"]["epoxy_density"])
-        erase_area = self.erase_paths.total_path_area
-        groove_depth = float(self.user_params["groove_depth"])
+        epoxy_density_g_cm3 = float(self.file_params["Material"]["epoxy_density"])
+        erase_area_mm2 = self.erase_paths.total_path_area
+        groove_depth_mm = float(self.user_params["groove_depth"])
         iter_num = float(self.user_params["iteration_number"])
-        print(epoxy_density, erase_area, groove_depth)
-        self.epoxy_filling_depth = groove_depth + ((iter_num - 2) * 0.05)
+        # print(epoxy_density, erase_area, groove_depth)
+        self.epoxy_filling_depth_mm = groove_depth_mm + ((iter_num - 2) * 0.05)
 
         # The 1000 is because we're converting mm3 to cm3
-        epoxy_weight = epoxy_density * erase_area * groove_depth #/ 1000 Ignoring the divide by 1000 so it'll be in miligrams
-        self.epoxy_weight = epoxy_weight
-        stencil_area = self.old_board.edge_area
+        epoxy_weight_g = epoxy_density_g_cm3 * erase_area_mm2 * self.epoxy_filling_depth_mm / 1000 
+        self.epoxy_weight_g = epoxy_weight_g
+        stencil_area_mm2 = self.old_board.edge_area
 
-        fr4_area = self.new_board.edge_area
+        fr4_area_mm2 = self.new_board.edge_area
 
         copper_per_ft2 = float(self.file_params["Material"]["copper_thickness"]) 
-        fbr_thickness = float(self.user_params["board_thickness"]) - 0.1
-        # fbr_density = float(self.file_params["Material"]["fiberglass_density"])
+        fbr_thickness_mm = float(self.user_params["board_thickness"]) - 0.1
 
-        # original_area = self.new_board.edge.get_area_mm() * MM2_TO_FT2
-
-        # fbr_weight = original_area * fbr_thickness * fbr_density
-
-        copper_weight = copper_per_ft2 * (fr4_area * MM2_TO_FT2) * OZ_TO_G
-        print(fr4_area, fbr_thickness, FIBERGLASS_DENSITY, 1000)
-        fiberglass_weight = fr4_area * fbr_thickness * FIBERGLASS_DENSITY #/ 1000 # cm3 to mm3 in mg
+        copper_weight_g = copper_per_ft2 * (fr4_area_mm2 * MM2_TO_FT2) * OZ_TO_G
+        # print(fr4_area_mm2, fbr_thickness_mm, FIBERGLASS_DENSITY, 1000)
+        fiberglass_weight_g = fr4_area_mm2 * fbr_thickness_mm * FIBERGLASS_DENSITY / 1000 # cm3 to mm3
         # print("weights", copper_weight, fiberglass_weight)
         
-        self.original_weight = copper_weight + fiberglass_weight
+        self.original_weight_g = copper_weight_g + fiberglass_weight_g
 
-        return f"{format_float(epoxy_weight)} mg", f"{format_float(stencil_area)} mm2",f"{format_float(fr4_area)} mm2", f"{format_float(self.original_weight - epoxy_weight)} mg"
+        return f"{format_float(epoxy_weight_g * 1000)} mg", f"{format_float(stencil_area_mm2)} mm2",f"{format_float(fr4_area_mm2)} mm2", f"{format_float((self.original_weight_g - epoxy_weight_g) * 1000)} mg"
         pass
 
     def CalcPrice(self):
@@ -470,11 +459,12 @@ New FR4 Engraving Energy = {original_energy}
         fr4_rate = float(self.file_params["Price"]["fr4_price"])
         stencil_rate = float(self.file_params["Price"]["stencil_price"])
 
-        self.stencil_price = (self.new_board.edge_area * stencil_rate)
-        self.epoxy_price = (self.epoxy_weight * epoxy_rate)
+        self.stencil_price = (self.new_board.edge_area * stencil_rate) / 1000000 # Converting mm2 to m2
+        self.epoxy_price = (self.epoxy_weight_g * epoxy_rate)
 
         renewal_price = self.epoxy_price + self.stencil_price
-        original_price = fr4_rate * self.new_board.edge_area
+        original_price = fr4_rate * self.new_board.edge_area / 100 # Converting mm2 to cm2
+        print("fr4 area", fr4_rate, self.new_board.edge_area / 100)
         return f"${format_float(original_price)}", f"${format_float(renewal_price)}", f"${format_float(original_price - renewal_price)}"
         pass
     
@@ -484,13 +474,13 @@ New FR4 Engraving Energy = {original_energy}
         heat_wtt = float(self.file_params["Curing Heater"]["heating_wattage"])
         las_wtt = float(self.file_params["Laser Cutter"]["laser_wattage"])
 
-        original_energy = eng_wtt * self.original_time
-        self.renewal_engraving_energy = (eng_wtt * self.write_time)
-        self.deposition_energy = (dep_wtt * self.deposition_time)
-        self.curing_energy = (heat_wtt * self.curing_time)
-        self.laser_energy = (las_wtt * self.stencil_time)
-        renewal_energy = (eng_wtt * self.write_time) + (dep_wtt * self.deposition_time) + (heat_wtt * self.curing_time) + (las_wtt * self.stencil_time)
-        return f"{format_float(original_energy)} J", f"{format_float(renewal_energy)} J", f"{format_float(original_energy - renewal_energy)} J"
+        original_energy_J = eng_wtt * self.original_time_s
+        self.renewal_engraving_energy_J = (eng_wtt * self.write_time_s)
+        self.deposition_energy_J = (dep_wtt * self.deposition_time_s)
+        self.curing_energy_J = (heat_wtt * self.curing_time_s)
+        self.laser_energy_J = (las_wtt * self.stencil_time_s)
+        renewal_energy_J = self.renewal_engraving_energy_J + self.deposition_energy_J + self.curing_energy_J + self.laser_energy_J
+        return f"{format_float(original_energy_J / 1000)} kJ", f"{format_float(renewal_energy_J / 1000)} kJ", f"{format_float((original_energy_J - renewal_energy_J) / 1000)} kJ"
         pass
 
     def OKClicked(self, event):
