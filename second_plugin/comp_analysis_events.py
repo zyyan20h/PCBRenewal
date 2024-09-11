@@ -131,7 +131,7 @@ CONFIG_FILE_PARAMS = {
         "fr4_price": {
             "FriendlyName":"FR4 Price",
             "Unit":"$/cm2",
-            "Default":1.27
+            "Default":0.127
         },
         "stencil_price": {
             "FriendlyName":"Stencil Price",
@@ -146,14 +146,14 @@ CONFIG_USER_PARAMS = {
         "groove_depth": {
             "FriendlyName": "Groove Depth",
             "Unit":"mm",
-            "Default":0.2
+            "Default":0.15
         }
     },
     "Material": {
         "board_thickness": {
             "FriendlyName": "Board Thickness",
             "Unit":"mm",
-            "Default":1.7
+            "Default":1.6
         }
     },
     "Renewal": {
@@ -404,7 +404,7 @@ New FR4 Engraving Energy = {original_energy_kJ}
         groove_depth_mm = float(self.user_params["groove_depth"])
 
         self.original_time_s = \
-            ((original_len_mm / eng_fr) * math.ceil(groove_depth_mm / eng_stepdown_mm)) + ((original_out_length_mm / eng_fr) * math.ceil(groove_depth_mm / eng_stepdown_mm)) + ((original_out_length_mm / out_fr) * math.ceil(board_thickness_mm / out_stepdown_mm)) 
+            ((original_len_mm *2 / eng_fr) * math.ceil(groove_depth_mm / eng_stepdown_mm)) + ((original_out_length_mm / eng_fr) * math.ceil(groove_depth_mm / eng_stepdown_mm)) + ((original_out_length_mm / out_fr) * math.ceil(board_thickness_mm / out_stepdown_mm)) 
         
         original_time_min = self.original_time_s / 60
 
