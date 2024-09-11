@@ -28,7 +28,7 @@ CONFIG_FILE_PARAMS = {
         "deposition_wattage": {
             "FriendlyName":"Depositon Wattage",
             "Unit":"W",
-            "Default":19
+            "Default":0
         }
     },
 
@@ -85,7 +85,7 @@ CONFIG_FILE_PARAMS = {
         "heating_wattage": {
             "FriendlyName":"Curing Heater Wattage",
             "Unit":"W",
-            "Default":26
+            "Default":22
         },
         "epoxy_curing_time": {
             "FriendlyName":"Curing Time",

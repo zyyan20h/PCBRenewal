@@ -300,9 +300,9 @@ class BoardComparisonWindow(ComparisonOptionsDialog):
         # self.board_vis.RemoveBoard(ERASE_NAME)
         # self.board_vis.RemoveBoard(WRITE_NAME)
         self.board_vis.PlotBoard(self.old_board, ERASE_NAME, path_dict=erase_paths, 
-                                 parent_board_name="Old Board", edge_cut_poly=erase_edges)
+                                 parent_board_name="Old Board", edge_cut_poly=None, plot_edge_cuts=False, layer_prefix="deposition")
         self.board_vis.PlotBoard(self.new_board, WRITE_NAME, path_dict=write_paths, 
-                                 parent_board_name="New Board", edge_cut_poly=write_edges)
+                                 parent_board_name="New Board", edge_cut_poly=erase_edges, layer_prefix="engraving")
         
         self.RunAnalysis(erase_paths=erase_paths, write_paths=write_paths, erase_edges=erase_edges)
         self.Layout()
@@ -342,7 +342,7 @@ BACKGROUND_COLOR = "#000020"
 BOARD_COLORS = {"Old Board":{"F.Cu":"#DD1010", "B.Cu":"#2f2fad", "Edge.Cuts":"#DDDDDD"},
                 "New Board":{"F.Cu":"#fa377b", "B.Cu":"#52b8f2", "Edge.Cuts":"#DDDDDD"},
                 ERASE_NAME:{"F.Cu":"#eb4a05", "B.Cu":"#0a8008", "Edge.Cuts":"#DDDDDD"},
-                WRITE_NAME:{"F.Cu":"#ffc021", "B.Cu":"#0bd439", "Edge.Cuts":"#DDDDDD"}}
+                WRITE_NAME:{"F.Cu":"#ffc021", "B.Cu":"#0bd439", "Edge.Cuts":"#69d466"}}
 
 board_disp_order = ["New Board", "Old Board", WRITE_NAME, ERASE_NAME]
 layer_disp_order = ["F.Cu", "B.Cu", "Edge.Cuts"]
@@ -403,7 +403,8 @@ class BoardVisPanel(wx.Panel):
         self.canvas.ZoomToBB()
         self.canvas.Draw(True)
 
-    def PlotBoard(self, board, board_name, parent_board_name=None, net_dict=None, path_dict=None, edge_cut_poly=None):
+    def PlotBoard(self, board, board_name, parent_board_name=None, net_dict=None, 
+                  path_dict=None, edge_cut_poly=None, plot_edge_cuts=True, layer_prefix=None):
         print("plotting board")
         if not board:
             return
@@ -461,28 +462,29 @@ class BoardVisPanel(wx.Panel):
                         hole_shape = self.canvas.AddPolygon(hole.coords, LineStyle="Transparent", FillStyle="Solid", FillColor=BACKGROUND_COLOR)
                         self.boards[board_name][layer].append(hole_shape)
 
-        if not edge_cut_poly:
-            self.boards[board_name]["Edge.Cuts"] = []
-            for shape_name, start, end, _ in board.edge_cut_shapes:
-                if shape_name == "Rect":
-                    width = end[0] - start[0]
-                    height = end[1] - start[1]
-                    shape = self.canvas.AddRectangle(start, (width, height), LineColor="#DDDDDD", FillStyle="Transparent")
-                elif shape_name == "Circle":
-                    diameter = 2 * (end - start).EuclideanNorm()
-                    shape = self.canvas.AddCircle(start, diameter, LineColor="#DDDDDD", FillStyle="Transparent")
-                else:
-                    print(f"Unkown Shape: {shape_name} at {start}")
-                    pass
-                self.boards[board_name]["Edge.Cuts"].append(shape)
-        else:
-            self.boards[board_name]["Edge.Cuts"] = []
-            for point_lst in edge_cut_poly.get_poly_points():
-                if len(point_lst) > 0:
-                    shape = self.canvas.AddPolygon(point_lst, FillStyle="Transparent", LineColor="#DDDDDD")
+        if plot_edge_cuts:
+            if not edge_cut_poly:
+                self.boards[board_name]["Edge.Cuts"] = []
+                for shape_name, start, end, _ in board.edge_cut_shapes:
+                    if shape_name == "Rect":
+                        width = end[0] - start[0]
+                        height = end[1] - start[1]
+                        shape = self.canvas.AddRectangle(start, (width, height), LineColor=BOARD_COLORS[board_name]["Edge.Cuts"], FillStyle="Transparent")
+                    elif shape_name == "Circle":
+                        diameter = 2 * (end - start).EuclideanNorm()
+                        shape = self.canvas.AddCircle(start, diameter, LineColor=BOARD_COLORS[board_name]["Edge.Cuts"], FillStyle="Transparent")
+                    else:
+                        print(f"Unkown Shape: {shape_name} at {start}")
+                        pass
                     self.boards[board_name]["Edge.Cuts"].append(shape)
+            else:
+                self.boards[board_name]["Edge.Cuts"] = []
+                for point_lst in edge_cut_poly.get_poly_points():
+                    if len(point_lst) > 0:
+                        shape = self.canvas.AddPolygon(point_lst, FillStyle="Transparent", LineColor=BOARD_COLORS[board_name]["Edge.Cuts"])
+                        self.boards[board_name]["Edge.Cuts"].append(shape)
 
-        self.AddBoardLayerControls(board_name, parent_board_name)
+        self.AddBoardLayerControls(board_name, parent_board_name, layer_prefix=layer_prefix)
         self.SetDisplayOrder()
         self.canvas.ZoomToBB()
         self.canvas.Draw(True)
@@ -513,7 +515,7 @@ class BoardVisPanel(wx.Panel):
             sizer.Remove(index)
         self.Layout()
 
-    def AddBoardLayerControls(self, board_name, parent_board_name=None):
+    def AddBoardLayerControls(self, board_name, parent_board_name=None, layer_prefix=None):
         print(board_name, parent_board_name)
         if not parent_board_name:
             check_box_container = wx.StaticBoxSizer(wx.VERTICAL, self, board_name)
@@ -535,10 +537,16 @@ class BoardVisPanel(wx.Panel):
             cb_sizer = wx.BoxSizer(wx.HORIZONTAL)
             color_circle = wx.StaticText(self, label="⬤ ")
             color_circle.SetForegroundColour(BOARD_COLORS[board_name][layer])
-            check_box = wx.CheckBox(self, wx.ID_ANY, layer)
+            layer_name_label = wx.StaticText(self, label=layer if not layer_prefix else f"{layer_prefix}_{layer}")
+            check_box = wx.CheckBox(self, wx.ID_ANY, "")
             check_box.SetValue(True)
+
             cb_sizer.Add(check_box)
+            cb_sizer.AddSpacer(5)
             cb_sizer.Add(color_circle)
+            cb_sizer.AddSpacer(5)
+            cb_sizer.Add(layer_name_label)
+            
             layer_change_function = \
                 lambda event, cb=check_box, l=layer: self.ChangeLayerVisibility(board_name, l, cb.IsChecked())
             check_box.Bind(wx.EVT_CHECKBOX, layer_change_function)
