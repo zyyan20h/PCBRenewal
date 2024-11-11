@@ -1,0 +1,4 @@
+(fp_lib_table
+  (version 7)
+  (lib (name "IO_watch_cat_ball")(type "KiCad")(uri "${KIPRJMOD}/IO_watch_cat_ball.pretty")(options "")(descr ""))
+)

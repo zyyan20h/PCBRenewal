@@ -1,0 +1,5 @@
+(sym_lib_table
+  (version 7)
+  (lib (name "IO_watch_cat_ball")(type "KiCad")(uri "${KIPRJMOD}/IO_watch_cat_ball.kicad_sym")(options "")(descr ""))
+  (lib (name "esp_example_symbols")(type "KiCad")(uri "/Users/zeyuy/Documents/Zeyu/research/renewablePCB/KiCAD_designs/esp_examples/esp_example_symbols.kicad_sym")(options "")(descr ""))
+)
