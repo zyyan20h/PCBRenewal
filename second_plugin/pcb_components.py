@@ -65,6 +65,19 @@ def get_offset(new_board, old_board, old_edge_ind=-1, new_edge_ind=-1, corner_na
     
     return offset_vector
 
+def get_arc_points(centre, radius, start_angle, end_angle, step= 5):
+        point = pcbnew.VECTOR2I(centre[0] + radius, centre[1])
+        point_lst = []
+
+        angle = start_angle
+
+        while angle < end_angle:
+            point_lst.append(rotate_point(point, angle, centre))
+
+            angle += step
+
+        return point_lst
+
 # Will only work on the board the plugin is run on
 def get_selection():
     selected_shapes = pcbnew.GetCurrentSelection()
@@ -147,23 +160,30 @@ class PcbTrack():
         return f"start {self.start} end {self.end}"
 
 class PcbPad():
-    def __init__(self, pad):
-        self.position = pad.GetPosition()
-        # self.size = size
-        self.layer = pad.GetLayerName()
-        self.polygon = pad.GetEffectivePolygon()
+    def __init__(self, pad, position=None, layer=None, polygon=None, net_name=None):
+        self.hole = None
+        
+        if pad:    
+            self.position = pad.GetPosition()
+            self.layer = pad.GetLayerName()
+            self.polygon = pad.GetEffectivePolygon()
+            self.net_name = pad.GetNetname()
+
+            if pad.HasHole():
+                # Creating my own polygon for a hole shape because I have to
+                self.hole = self.create_hole_shape(pad.GetEffectiveHoleShape(), pad.GetDrillShape())
+        else:
+            self.position = position
+            self.layer = layer
+            self.polygon = polygon
+            self.net_name = net_name
+
         self.poly_points = None
+
         if self.polygon.OutlineCount() > 0:
             line_chain = self.polygon.Outline(0)
             self.poly_points = [ p for p in line_chain.CPoints()]
-        # self.orientation = orientation
-        self.net_name = pad.GetNetname()
-        
-        self.hole = None
-
-        if pad.HasHole():
-            # Creating my own polygon for a hole shape because I have to
-            self.hole = self.create_hole_shape(pad.GetEffectiveHoleShape(), pad.GetDrillShape())
+        # self.orientation = orientation   
 
     def offset(self, offset):
         self.position += offset
@@ -353,6 +373,79 @@ class PcbHole():
 
         return f"X{x}Y{y}"
 
+class PcbVia():
+    def __init__(self, via):
+        self.position = via.GetPosition()
+        # Diameter of the hole in the centre
+        self.drill = via.GetDrill()
+
+        # Outer circle of copper around the hole
+        self.annulus = via.GetWidth()
+        self.net_name = via.GetNetname()
+
+        self.hole_shape = self.create_hole_shape()
+    # Doing duplicate things
+    def create_hole_shape(self, board=None):
+        hole_point_lst = get_arc_points(self.position, self.drill // 2, 0, 360)
+
+        hole_outline = pcbnew.SHAPE_LINE_CHAIN()
+
+        for p in hole_point_lst:
+            hole_outline.Append(p)
+
+        hole_poly = pcbnew.SHAPE_POLY_SET()
+        hole_poly.AddOutline(hole_outline)
+
+        if board:
+            hole_shape = pcbnew.PCB_SHAPE(board)
+            hole_shape.SetShape(pcbnew.S_POLYGON)
+            hole_shape.SetPolyShape(hole_poly)
+
+        else:
+            hole_shape = pcbnew.PCB_SHAPE()
+            hole_shape.SetShape(pcbnew.S_POLYGON)
+            hole_shape.SetPolyShape(hole_poly)
+
+        hole_shape.SetFilled(False)
+        hole_shape.SetWidth(100000)
+
+        return hole_shape
+
+    def offset(self, offset_vec):
+        # print("via offsetted", self.position)
+        # No idea why I'm subtracting it, but it works
+        self.position -= offset_vec
+        self.hole_shape.SetPolyShape(offset_polygon(self.hole_shape.GetPolyShape(), offset_vec))
+        # print(self.position)
+        pass
+    
+    # Use hole_shape to get points instead of creating polygon again
+    def get_pads(self):
+        annulus_point_lst = get_arc_points(self.position, self.annulus // 2, 0, 360)
+
+        annulus_outline = pcbnew.SHAPE_LINE_CHAIN()
+
+        for p in annulus_point_lst:
+            annulus_outline.Append(p)
+
+        polygon = pcbnew.SHAPE_POLY_SET()
+        polygon.AddOutline(annulus_outline)
+
+
+        return [PcbPad(None, self.position, "F.Cu", polygon, self.net_name), \
+                    PcbPad(None, self.position, "B.Cu", polygon, self.net_name)]
+        pass
+
+    def plot(self, board):
+        # shape = self.create_hole_shape(board)
+        shape = self.hole_shape
+        shape.SetLayer(pcbnew.Edge_Cuts)
+        board.Add(shape)
+        pass
+
+    def __eq__(self, other):
+        return (other != None) and (self.position == other.position) and (self.drill == other.drill)
+
 class PcbBoard():
     # def __init__(self, board=None, path=None):
     def __init__(self, path=None):  
@@ -368,10 +461,19 @@ class PcbBoard():
             board = pcbnew.LoadBoard(path)
         self.board = board
         
-        track_lst = filter(lambda x: type(x) == pcbnew.PCB_TRACK, board.GetTracks())
-        self.track_lst = [PcbTrack(track) for track in track_lst]
+        self.track_lst = []
+        self.via_list = []
+
+        for t in board.GetTracks():
+            if type(t) == pcbnew.PCB_TRACK:
+                self.track_lst.append(PcbTrack(t))
+            elif type(t) == pcbnew.PCB_VIA:
+                self.via_list.append(PcbVia(t))
 
         self.pad_lst = [PcbPad(pad) for pad in board.GetPads()]
+
+        for via in self.via_list:
+            self.pad_lst += via.get_pads()
 
         self.net_dict = dict()
         self.gnd_nets = []
@@ -415,6 +517,8 @@ class PcbBoard():
             track.offset(offset)
         for pad in self.pad_lst:
             pad.offset(offset)
+        for via in self.via_list:
+            via.offset(offset)
 
         self.edge_cut_shapes = [(name, start + offset, end + offset, edge) for (name, start, end, edge) in self.edge_cut_shapes]
         self.footprint_names = [(name, pos + offset, f) for (name, pos, f) in self.footprint_names]
@@ -530,7 +634,7 @@ class PcbBoard():
         
         for layer in selected_layers:
             if layer in net_dict:
-                path_dict[layer] = NetCollection(net_list=net_dict[layer])
+                path_dict[layer] = NetCollection(net_list=net_dict[layer], layer=layer)
         
         return path_dict
 
@@ -573,6 +677,7 @@ class PcbBoard():
             selected_layers = old_board.net_dict.keys()
 
         for layer in selected_layers:
+            print("net layer comparing", layer)
             # Making sure changes to these lists don't affect the originals
             old_net_list = old_board.net_dict[layer].copy() if layer in old_board.net_dict else []
             write_net_dict[layer] = self.net_dict[layer].copy() if layer in self.net_dict else []
@@ -590,7 +695,7 @@ class PcbBoard():
                 if not is_in_new:
                     erase_net_dict[layer].append(old_net)
 
-            return erase_net_dict, write_net_dict
+        return erase_net_dict, write_net_dict
 
     def compare_edges(self, old_board):
         new_edges =  self.edge # EdgeCollection(self.edge_cut_shapes, self)
@@ -599,6 +704,28 @@ class PcbBoard():
         erase_edges = old_edges.edge_difference(new_edges)
         write_edges = new_edges.edge_difference(old_edges)
         return erase_edges, write_edges
+    
+    def compare_vias(self, old_board):
+        new_vias = self.via_list
+        old_vias = old_board.via_list
+
+        erase_vias = []
+        write_vias = new_vias.copy()
+
+        for old_via in old_vias:
+            is_in_new = False
+            
+            for new_ind, new_via in enumerate(write_vias):
+                if old_via == new_via:
+                    is_in_new = True
+                    write_vias.pop(new_ind)
+                    break
+
+            if not is_in_new:
+                erase_vias.append(old_via)
+
+        return erase_vias, write_vias
+        
 
     def compare_holes(self, old_board):
         erase_holes = []
@@ -621,6 +748,11 @@ class PcbBoard():
     def plot_holes(self, hole_list, board, plot_mode):
         for hole in hole_list:
             hole.plot(board, layer_dict[plot_mode])
+
+    def plot_via_holes(self, via_list, board):
+        for via in via_list:
+            via.plot(board)
+        pass
 
     def plot_nets(self, net_dict, board, plot_mode):
         for layer in net_dict:
@@ -673,24 +805,16 @@ class PcbBoard():
 
         plot_ctrl.ClosePlot()
     
-    def plot_drill(self, board, file_path, hole_lst):
-        
-        with open(file_path, "w") as drill_file:
+    def export_drill(self, board, file_path):
+        # https://gist.github.com/aster94/bd52972ab6dbf13a44fc046b4222f7e7
+        drill_writer = pcbnew.EXCELLON_WRITER(board)
 
-            drill_file.write("M48\n")
-            drill_file.write("FMAT,2\n")
-            drill_file.write("METRIC\n")
+        DRILL_FILE = True
+        MAP_FILE = False
+        REPORTER = None # Not really sure what this is
+        drill_writer.CreateDrillandMapFilesSet(file_path, DRILL_FILE, MAP_FILE, REPORTER)
 
-            # Write tool specifications here
-
-            drill_file.write("%") #end of header
-
-            # Choose tool
-
-            for hole in hole_lst:
-                drill_file.write(hole.get_drill_code() + "\n")
-
-            drill_file.write("M30") #end
+        pass
 
     def create_board_copy(self, filename):
         print("creating board copy")
@@ -732,12 +856,12 @@ class PcbBoard():
         print(f"start of comparinf, method is {compare_paths}")
         erase_holes, write_holes = None, None
         plot_external_holes = False
-        if self.board.GetLayerName(pcbnew.Edge_Cuts) in selected_layers:
-            erase_holes, write_holes = self.compare_holes(old_board)
-            plot_external_holes = True  
-        else:
-            selected_layers.append(HOLE_NAME)
-            pass
+        # if self.board.GetLayerName(pcbnew.Edge_Cuts) in selected_layers:
+        #     erase_holes, write_holes = self.compare_holes(old_board)
+        #     plot_external_holes = True  
+        # else:
+        #     selected_layers.append(HOLE_NAME)
+        #     pass
 
         # Assigning each erase and write layer to be exported to a user layer in the plot file
         user_layer_ind = 0
@@ -778,10 +902,14 @@ class PcbBoard():
             erase_nets, write_nets = self.compare_nets(old_board, selected_layers)
             self.disp_board = self.create_board_copy("comparison")
             self.export_board = self.disp_board
-
+            print("n et keys", self.net_dict.keys(), old_board.net_dict.keys())
             # Comparing those paths
             erase_paths, write_paths = self.compare_paths(old_board=old_board, selected_layers=selected_layers, \
                                                           new_net_dict=write_nets, old_net_dict=erase_nets)
+
+        erase_vias, write_vias = self.compare_vias(old_board)
+        print(f"vias {erase_vias}")
+        self.plot_via_holes(erase_vias, self.export_board)
 
         self.plot_paths(path_dict=erase_paths, layer_dict=layer_dict, 
                             board=old_board, plot_board=self.disp_board, mode="erase")
@@ -797,10 +925,21 @@ class PcbBoard():
         save_board(self.export_board)
 
         erase_edges, write_edges = self.compare_edges(old_board)
+
+        # adding vias to the write_edges:
+        write_edges.add_via_holes(erase_vias)
+
         erase_edges.export_edge(old_board, os.path.join(self.comp_folder_path, "erase_Edge.Cuts.svg"))
-        write_edges.export_edge(self, os.path.join(self.comp_folder_path, "write_Edge.Cuts.svg"))
+        write_edges.export_edge(self, os.path.join(self.comp_folder_path, "write_Edge.Cuts.svg"))\
+        
+        self.export_drill(self.export_board, self.comp_folder_path)
 
         self.export_overwrite(erase_paths, write_paths)
+
+        self.plot_gerbers(self.export_board, self.comp_folder_path, [("Edge.Cuts", pcbnew.Edge_Cuts)])
+        
+        print("Just checking the back layer is compared")
+        print(erase_paths.keys())
 
         return erase_paths, erase_edges, write_paths, write_edges
 
@@ -845,5 +984,4 @@ class PcbBoard():
 
         # self.plot_gerbers(self.export_board, self.comp_folder_path, file_names)
         self.plot_svg(self.export_board, self.comp_folder_path)
-        
         pass

@@ -1,5 +1,5 @@
 # from svgpathtools import svg2paths, wsvg, Line, Path, parse_path
-from shapely import MultiPolygon, Polygon, LineString, MultiLineString, box, union_all, transform #  Go to Kicad Command prompt and type 'pip install shapely'
+from shapely import MultiPolygon, Polygon, LineString, MultiLineString, Point, box, union_all, transform #  Go to Kicad Command prompt and type 'pip install shapely'
 import pcbnew
 # from .pcb_components import PcbTrack, PcbPad, rotate_point
 import math
@@ -7,6 +7,8 @@ import math
 IU_PER_MM = pcbnew.PCB_IU_PER_MM
 
 DEFAULT_OFFSET = 0.4
+
+OFFSET_BY_LAYER = {"F.Cu" : 0.2, "B.Cu": 0.4}
 
 # SHAPE_POLY_SET class in pcbnew seems to have BooleanAdd, BooleanSubtract classes
 # May be possible to remove the need for shapely library
@@ -22,6 +24,29 @@ def rotate_point(p: pcbnew.VECTOR2I, angle: float, centre: pcbnew.VECTOR2I = pcb
     y = int((centred_p[0] * math.sin(angle_rad)) + (centred_p[1] * math.cos(angle_rad)))
 
     return (pcbnew.VECTOR2I(x, y) + centre)
+
+def get_arc_points(centre, radius=None, start_angle=None, end_angle=None, start=None, end=None, angle=None, step= 5):
+        if not angle:
+            point = pcbnew.VECTOR2I(centre[0] + radius, centre[1])
+            point_lst = []
+
+            angle = start_angle
+
+            while angle < end_angle:
+                point_lst.append(rotate_point(point, angle, centre))
+
+                angle += step
+        else:
+            point_lst = [start]
+            point = start
+            while angle > (0 + step):
+                point = rotate_point(point, step, centre)
+                point_lst.append(point)
+                angle -= step
+
+            point_lst.append(end)
+
+        return point_lst
 
 debug = False
 
@@ -101,8 +126,8 @@ class ComponentShape:
 
 class NetShape:
     def __init__(self, net, offset=DEFAULT_OFFSET):
-        pad_shapes = [ComponentShape(pad, "pad").outline for pad in net.pad_lst]
-        track_shapes = [ComponentShape(track, "track").outline for track in net.track_lst]
+        pad_shapes = [ComponentShape(pad, "pad", offset).outline for pad in net.pad_lst]
+        track_shapes = [ComponentShape(track, "track", offset).outline for track in net.track_lst]
         component_shapes = pad_shapes + track_shapes
         self.outline = union_all(component_shapes)
         # print(f"num pads  = {len(pad_shapes)}")
@@ -114,8 +139,8 @@ class NetShape:
 
 
         # offset_path_shape = buffer(self.outline, offset/2)
-        offset_path_shape = union_all([p.buffer((offset/2 ) * IU_PER_MM) for p in component_shapes])
-
+        offset_path_shape = union_all([p.buffer((offset/2) * IU_PER_MM) for p in component_shapes])
+        # print("shape offset", offset)
 
         self.offset_path = None
         # Converting to a line instead of a polygon
@@ -127,17 +152,21 @@ class NetShape:
         self.offset = offset
 
 class NetCollection:
-    def __init__(self, net_list=None, offset=DEFAULT_OFFSET, shape_collection=None):
+    def __init__(self, net_list=None, offset=DEFAULT_OFFSET, layer=None, shape_collection=None):
         self.combined_net_paths = None
         self.offset = offset
         self.combined_outlines = None
+
+        if layer:
+            self.offset = OFFSET_BY_LAYER[layer]
+            # print("Offset", layer, self.offset)
 
         if shape_collection:
             # For when you already have shapely objects and you just want to store them in this class
             self.combined_net_paths = shape_collection
 
         elif net_list:
-            net_shapes = [NetShape(net)for net in net_list]
+            net_shapes = [NetShape(net, self.offset)for net in net_list]
             path_lst = [shape.offset_path for shape in net_shapes]
             outline_lst = [shape.outline for shape in net_shapes]
             # # might be breaking because of somehting called pygeos and it not being the correct version
@@ -152,7 +181,7 @@ class NetCollection:
 
     def path_difference(self, other):
         diff = self.combined_net_paths.difference(other.combined_net_paths)
-        return NetCollection(shape_collection=diff)
+        return NetCollection(shape_collection=diff, offset=self.offset)
 
     def export_path(self, board, filename, add_edge_cut=True, is_stencil=False):
         # shape = self.combined_net_paths
@@ -183,6 +212,19 @@ class NetCollection:
                 radius = (end - start).EuclideanNorm() // IU_PER_MM
                 x, y = (start - board.offset_vec - board_topleft) / IU_PER_MM
                 edge_svg_text += f'<circle r=\"{radius}\" cx=\"{x}\" cy=\"{y}\" stroke-width=\"{0.1}\" fill="none" stroke=\"black\"/>'
+            
+            elif shape_name == "Arc":
+                radius = shape_ref.GetRadius() / IU_PER_MM
+                start = (start - board.offset_vec - board_topleft) / IU_PER_MM
+                end = (end - board.offset_vec - board_topleft) / IU_PER_MM
+                angle = shape_ref.GetArcAngle().AsDegrees()
+                large_arc_factor = 1 if angle > 180 else 0
+                edge_svg_text += f'<path d=\"M {start[0]} {start[1]} A {radius} {radius} 0 {large_arc_factor} 1 {end[0]} {end[1]}\" stroke-width=\"{0.1}\" fill="none" stroke=\"black\"/>'
+
+            elif shape_name == "Line":
+                start = (start - board.offset_vec - board_topleft) / IU_PER_MM
+                end = (end - board.offset_vec - board_topleft) / IU_PER_MM
+                edge_svg_text += f'<line x1=\"{start[0]}\" y1=\"{start[1]}\" x2=\"{end[0]}\" y2=\"{end[1]}\" stroke-width=\"{0.1}\" fill="none" stroke=\"black\"/>'
             pass
 
         with open(filename, "w") as svg_file:
@@ -226,6 +268,7 @@ class NetCollection:
             shape_list = [self.combined_net_paths]
 
         line_width = int(self.offset * IU_PER_MM)
+        print(line_width)
         for shape in shape_list:
             ind = 0
             points = shape.coords
@@ -263,30 +306,57 @@ class EdgeCollection:
         polygons = []
         print(edge_cut_shapes)
         
-        # Using the shape to get start and end because the start and end stored in edge_cut_shapes refer to bounding box
-        for name, _, _, shape in edge_cut_shapes:
+        for name, start, end, shape in edge_cut_shapes:
+            board_offset = pcbnew.VECTOR2I(0,0)
+            if self.board:
+                board_offset = self.board.offset_vec
+            
             if name == "Rect":
-                board_offset = pcbnew.VECTOR2I(0,0)
-                if self.board:
-                    board_offset = self.board.offset_vec
                 start = shape.GetStart() + board_offset
                 end = shape.GetEnd() + board_offset
                 p = box(*start, *end)
                 polygons.append(p)
+            elif name == "Cicle":
+                radius = (start - end).EuclideanNorm()
+                center = Point(start)
+
+                p = center.buffer(radius)
+                polygons.append(p)
+            # elif name == "Line":
+            #     polygons.append(LineString([start,end]))
+
+            # elif name == "Arc":
+            #     center = shape.GetCenter() + board_offset
+            #     p = LineString(get_arc_points(center, start=start, end=end, angle=shape.GetArcAngle().AsDegrees()))
+            #     polygons.append(p)
+
 
         combined =  union_all(polygons)
         # print("combined", combined)
         return combined
+    
+    def add_via_holes(self, via_list):
+        def via_to_poly(via):
+            shape = via.hole_shape
+            points = shape.GetPolyShape().Outline(0).CPoints()
+            poly = Polygon([p for p in points])
+            return poly
+            
+        for via in via_list:
+            poly = via_to_poly(via)
+            self.cut_length += poly.length
+            self.edge_polygon = self.edge_polygon.union(poly)
+            pass
     
     def offset(self, offset):
         self.edge_polygon = transform(self.edge_polygon, lambda x: x + offset)
 
     def get_outline(self):
         outline = None
-        if type(self.edge_polygon) == MultiPolygon:
-            outline = union_all([s.exterior for s in self.edge_polygon.geoms])
-        else:
+        if type(self.edge_polygon) == Polygon:
             outline = self.edge_polygon.exterior
+        else:
+            outline = union_all([s.exterior for s in self.edge_polygon.geoms])
         return outline
 
     def edge_difference(self, other_edge):
@@ -305,7 +375,8 @@ class EdgeCollection:
         if type(self.edge_polygon) == Polygon:
             return [self.edge_polygon.exterior.coords]
         
-        elif type(self.edge_polygon) == MultiPolygon:
+        # elif type(self.edge_polygon) == MultiPolygon:
+        else:
             return [p.exterior.coords for p in self.edge_polygon.geoms]
         
     def export_edge(self, board, filename):
@@ -324,7 +395,7 @@ class EdgeCollection:
         with open(filename, "w") as svg_file:
             svg_text =  f'''<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 {bb_width} {bb_height}\" width=\"{bb_width}mm\" height=\"{bb_height}mm\">
                     <g stroke-linecap=\"round\">
-                        {shape.svg(scale_factor=0, opacity=1)}
+                        {shape.svg(scale_factor=0)}
                     </g>
                     </svg>'''
             svg_file.write(svg_text)

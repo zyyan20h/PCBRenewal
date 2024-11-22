@@ -291,7 +291,7 @@ class BoardComparisonWindow(ComparisonOptionsDialog):
 
         #Convert from indexes to layer names
         selected_layers = [self.cu_layers[index] for index in selected_layers]
-
+        print(selected_layers)
         erase_paths, erase_edges, write_paths, write_edges = self.new_board.compare_and_plot(self.old_board, selected_layers, compare_paths=self.comparison_method)
         self.AddToLog("Boards compared")
         self.erase_paths = erase_paths
@@ -465,7 +465,7 @@ class BoardVisPanel(wx.Panel):
         if plot_edge_cuts:
             if not edge_cut_poly:
                 self.boards[board_name]["Edge.Cuts"] = []
-                for shape_name, start, end, _ in board.edge_cut_shapes:
+                for shape_name, start, end, ref in board.edge_cut_shapes:
                     if shape_name == "Rect":
                         width = end[0] - start[0]
                         height = end[1] - start[1]
@@ -473,13 +473,27 @@ class BoardVisPanel(wx.Panel):
                     elif shape_name == "Circle":
                         diameter = 2 * (end - start).EuclideanNorm()
                         shape = self.canvas.AddCircle(start, diameter, LineColor=BOARD_COLORS[board_name]["Edge.Cuts"], FillStyle="Transparent")
+                    elif shape_name == "Arc":
+                        # Duplicate offset calculation
+                        print("Arc", start, end)
+                        center = (start - ref.GetStart()) + ref.GetCenter()
+                        shape = self.canvas.AddArc(end, start, center, LineColor=BOARD_COLORS[board_name]["Edge.Cuts"])
+                        pass
+                    elif shape_name == "Line":
+                        print("Line", start, end)
+                        shape = self.canvas.AddLine([start, end], LineColor=BOARD_COLORS[board_name]["Edge.Cuts"])
+                        pass
                     else:
+                        # TODO: Add support for lines and arcs
                         print(f"Unkown Shape: {shape_name} at {start}")
                         pass
                     self.boards[board_name]["Edge.Cuts"].append(shape)
             else:
                 self.boards[board_name]["Edge.Cuts"] = []
-                for point_lst in edge_cut_poly.get_poly_points():
+                poly_points = edge_cut_poly.get_poly_points()
+            
+
+                for point_lst in poly_points:
                     if len(point_lst) > 0:
                         shape = self.canvas.AddPolygon(point_lst, FillStyle="Transparent", LineColor=BOARD_COLORS[board_name]["Edge.Cuts"])
                         self.boards[board_name]["Edge.Cuts"].append(shape)
