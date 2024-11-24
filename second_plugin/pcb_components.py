@@ -165,7 +165,7 @@ class PcbPad():
         
         if pad:    
             self.position = pad.GetPosition()
-            self.layer = pad.GetLayerName()
+            self.layer = pad.GetParentFootprint().GetLayerName()
             self.polygon = pad.GetEffectivePolygon()
             self.net_name = pad.GetNetname()
 
