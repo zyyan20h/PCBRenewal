@@ -9,7 +9,7 @@ import wx
 #TODO RENAME!!!
 class ComplexPluginAction(pcbnew.ActionPlugin):
     def defaults(self):
-        self.name = "Track Subtractor"
+        self.name = "PCB Renewal"
         self.category = "A descriptive category name"
         self.description = "Compares two boards"
         self.show_toolbar_button = True # Optional, defaults to False

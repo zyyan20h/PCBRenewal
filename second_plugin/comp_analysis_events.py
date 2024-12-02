@@ -9,6 +9,18 @@ current_folder = os.path.dirname(os.path.abspath(__file__))
 DEFAULT_CONFIG_FILE = os.path.join(current_folder, 'config.ini')
 
 CONFIG_FILE_PARAMS = {
+    "Desoldering and Pad Cleaning": {
+        "desoldering_wattage": {
+            "FriendlyName":"Desoldering Wattage",
+            "Unit":"W",
+            "Default":0
+        },
+        "pad_cleaning_wattage": {
+            "FriendlyName":"Pad Cleaning Wattage",
+            "Unit":"W",
+            "Default":0
+        }
+    },
     "Deposition": {
         # "diameter": {
         #     "FriendlyName":"Diameter",
@@ -142,6 +154,18 @@ CONFIG_FILE_PARAMS = {
 }
 
 CONFIG_USER_PARAMS = {
+    "Desoldering and Pad Cleaning": {
+        "desoldering_time": {
+            "FriendlyName":"Desoldering Time",
+            "Unit":"s",
+            "Default":60
+        },
+        "pad_cleaning_time": {
+            "FriendlyName":"Cleaning Time per Pad",
+            "Unit":"s/pad",
+            "Default":6
+        }
+    },
     "Engraving": {
         "groove_depth": {
             "FriendlyName": "Groove Depth",
@@ -185,7 +209,7 @@ def create_config_file():
     with open(DEFAULT_CONFIG_FILE, 'w') as con_file:
         config.write(con_file)
 
-# create_config_file()
+create_config_file()
 
 class PathParams():
     def __init__(self, board=None, path_dict=None):
