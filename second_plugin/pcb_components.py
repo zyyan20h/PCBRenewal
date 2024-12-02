@@ -386,7 +386,8 @@ class PcbVia():
         self.hole_shape = self.create_hole_shape()
     # Doing duplicate things
     def create_hole_shape(self, board=None):
-        hole_point_lst = get_arc_points(self.position, self.drill // 2, 0, 360)
+        # Offsetting diameter by 0.1
+        hole_point_lst = get_arc_points(self.position, (self.drill // 2) + 0.05, 0, 360)
 
         hole_outline = pcbnew.SHAPE_LINE_CHAIN()
 
