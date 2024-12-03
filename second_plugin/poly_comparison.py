@@ -305,34 +305,57 @@ class EdgeCollection:
     def create_edge_polygon(self, edge_cut_shapes):
         polygons = []
         print(edge_cut_shapes)
-        
+
         for name, start, end, shape in edge_cut_shapes:
             board_offset = pcbnew.VECTOR2I(0,0)
             if self.board:
                 board_offset = self.board.offset_vec
+
+            width = shape.GetWidth()
             
             if name == "Rect":
                 start = shape.GetStart() + board_offset
                 end = shape.GetEnd() + board_offset
                 p = box(*start, *end)
+                p = p.exterior.buffer(width)
                 polygons.append(p)
+
             elif name == "Cicle":
                 radius = (start - end).EuclideanNorm()
                 center = Point(start)
-
                 p = center.buffer(radius)
+                p = p.exterior.buffer(width)
                 polygons.append(p)
-            # elif name == "Line":
-            #     polygons.append(LineString([start,end]))
+        
+            elif name == "Line":
+                p = LineString([start,end]).buffer(width)
+                polygons.append(p)
 
-            # elif name == "Arc":
-            #     center = shape.GetCenter() + board_offset
-            #     p = LineString(get_arc_points(center, start=start, end=end, angle=shape.GetArcAngle().AsDegrees()))
-            #     polygons.append(p)
-
+            elif name == "Arc":
+                center = shape.GetCenter() + board_offset
+                p = LineString(get_arc_points(center, start=start, end=end, angle=shape.GetArcAngle().AsDegrees()))
+                p = p.buffer(width)
+                polygons.append(p)
 
         combined =  union_all(polygons)
-        # print("combined", combined)
+        polygons = []
+        if type(combined) == Polygon:
+            polygons = [Polygon(ls) for ls in combined.interiors]
+        else:
+            for p in combined.geoms():
+                polygons += [Polygon(ls) for ls in p.interiors]
+        
+        polygons.sort(key=lambda x: x.area, reverse=True)
+
+        combined = polygons[0]
+        polygons = polygons[1:]
+        
+        for p in polygons:
+            if combined.contains(p):
+                combined = combined.difference(p)
+            else:
+                combined = combined.union(p)
+
         return combined
     
     def add_via_holes(self, via_list):
@@ -345,7 +368,7 @@ class EdgeCollection:
         for via in via_list:
             poly = via_to_poly(via)
             self.cut_length += poly.length
-            self.edge_polygon = self.edge_polygon.union(poly)
+            self.edge_polygon = self.edge_polygon.difference(poly)
             pass
     
     def offset(self, offset):

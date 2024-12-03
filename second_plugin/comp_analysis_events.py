@@ -13,7 +13,7 @@ CONFIG_FILE_PARAMS = {
         "desoldering_wattage": {
             "FriendlyName":"Desoldering Wattage",
             "Unit":"W",
-            "Default":0
+            "Default":22
         },
         "pad_cleaning_wattage": {
             "FriendlyName":"Pad Cleaning Wattage",
@@ -219,6 +219,7 @@ class PathParams():
             self.path_dict = board.create_path_dict()
             self.edge_area = board.edge.get_area_mm()
             self.edge_length = board.edge.get_length_mm()
+            self.num_pads = len(board.board.GetPads())
 
         self.length_dict = dict()
         self.total_path_length = 0
@@ -393,17 +394,27 @@ Epoxy Price = ${format_float(self.epoxy_price)}
 Stencil Price = ${format_float(self.stencil_price)}
 FR4 Price = {original_price}
 
+Desoldering Time = {format_float(self.desoldering_time_s / 60)} min
+Pad cleaning Time = {format_float(self.pad_cleaning_time_s / 60)} min
 Deposition Time = {format_float(self.deposition_time_s / 60)} min
 Curing Time = {format_float(self.curing_time_s / 60)} min
 Laser Cutting Time = {format_float(self.stencil_time_s / 60)} min
 Renewal Engraving Time = {format_float(self.write_time_s / 60)} min
 New FR4 Engraving Time = {format_float(self.original_time_s / 60)} min
 
+Desoldering Energy = {format_float(self.desoldering_energy_J / 1000)} kJ
+Pad Cleaning Energy = {format_float(self.pad_cleaning_energy_J / 1000)} kJ
 Deposition Energy = {format_float(self.deposition_energy_J / 1000)} kJ
 Curing Energy = {format_float(self.curing_energy_J / 1000)} kJ
 Laser Cutting Energy = {format_float(self.laser_energy_J / 1000)} kJ
 Renewal Engraving Energy = {format_float(self.renewal_engraving_energy_J / 1000)} kJ
 New FR4 Engraving Energy = {original_energy_kJ}
+
+=========Renewal/FR4 Ratio==========
+Material = {self.material_ratio}
+Cost = {self.price_ratio}
+Time = {self.time_ratio}
+Energy = {self.energy_ratio}
 ''' 
         print(text)
         return text
@@ -427,6 +438,10 @@ New FR4 Engraving Energy = {original_energy_kJ}
         iter_num = int(self.user_params["iteration_number"])
         groove_depth_mm = float(self.user_params["groove_depth"])
 
+        self.desoldering_time_s = float(self.user_params["desoldering_time"])
+        cleaning_pad_time_s_per_pad = float(self.user_params["pad_cleaning_time"])
+        self.pad_cleaning_time_s = float(self.old_board.num_pads * cleaning_pad_time_s_per_pad)
+
         self.original_time_s = \
             ((original_len_mm *2 / eng_fr) * math.ceil(groove_depth_mm / eng_stepdown_mm)) + ((original_out_length_mm / eng_fr) * math.ceil(groove_depth_mm / eng_stepdown_mm)) + ((original_out_length_mm / out_fr) * math.ceil(board_thickness_mm / out_stepdown_mm)) 
         
@@ -443,7 +458,9 @@ New FR4 Engraving Energy = {original_energy_kJ}
         self.write_time_s = \
             ((write_len / eng_fr) * math.ceil(write_eng_depth / eng_stepdown_mm)) + ((write_out_len / out_fr) * math.ceil(board_thickness_mm / out_stepdown_mm))
 
-        renewal_time_min = (self.curing_time_s + self.stencil_time_s + self.deposition_time_s + self.write_time_s) / 60
+        renewal_time_min = (self.desoldering_time_s +self.pad_cleaning_time_s + self.curing_time_s + self.stencil_time_s + self.deposition_time_s + self.write_time_s) / 60
+
+        self.time_ratio = renewal_time_min / original_time_min
 
         return f"{format_float(original_time_min)} min", f"{format_float(renewal_time_min)} min", f"{format_float(original_time_min - renewal_time_min)} min"
         pass
@@ -473,6 +490,8 @@ New FR4 Engraving Energy = {original_energy_kJ}
         
         self.original_weight_g = copper_weight_g + fiberglass_weight_g
 
+        self.material_ratio = epoxy_weight_g / self.original_weight_g if self.original_weight_g != 0 else "FR4 weight is 0"
+
         return f"{format_float(epoxy_weight_g * 1000)} mg", f"{format_float(stencil_area_mm2)} mm2",f"{format_float(fr4_area_mm2)} mm2", f"{format_float((self.original_weight_g - epoxy_weight_g) * 1000)} mg"
         pass
 
@@ -489,6 +508,9 @@ New FR4 Engraving Energy = {original_energy_kJ}
         renewal_price = self.epoxy_price + self.stencil_price
         original_price = fr4_rate * self.new_board.edge_area / 100 # Converting mm2 to cm2
         print("fr4 area", fr4_rate, self.new_board.edge_area / 100)
+        
+        self.price_ratio = renewal_price / original_price if original_price != 0 else "FR4 Cost is 0"
+            
         return f"${format_float(original_price)}", f"${format_float(renewal_price)}", f"${format_float(original_price - renewal_price)}"
         pass
     
@@ -498,12 +520,21 @@ New FR4 Engraving Energy = {original_energy_kJ}
         heat_wtt = float(self.file_params["Curing Heater"]["heating_wattage"])
         las_wtt = float(self.file_params["Laser Cutter"]["laser_wattage"])
 
+        desoldering_wtt = float(self.file_params["Desoldering and Pad Cleaning"]["desoldering_wattage"])
+        pad_cleaning_wtt = float(self.file_params["Desoldering and Pad Cleaning"]["pad_cleaning_wattage"])
+
         original_energy_J = eng_wtt * self.original_time_s
         self.renewal_engraving_energy_J = (eng_wtt * self.write_time_s)
         self.deposition_energy_J = (dep_wtt * self.deposition_time_s)
         self.curing_energy_J = (heat_wtt * self.curing_time_s)
         self.laser_energy_J = (las_wtt * self.stencil_time_s)
-        renewal_energy_J = self.renewal_engraving_energy_J + self.deposition_energy_J + self.curing_energy_J + self.laser_energy_J
+        self.desoldering_energy_J = (desoldering_wtt * self.desoldering_time_s)
+        self.pad_cleaning_energy_J = (pad_cleaning_wtt * self.pad_cleaning_time_s)
+
+        renewal_energy_J = self.desoldering_energy_J + self.pad_cleaning_energy_J + self.renewal_engraving_energy_J + self.deposition_energy_J + self.curing_energy_J + self.laser_energy_J
+        
+        self.energy_ratio = renewal_energy_J / original_energy_J
+        
         return f"{format_float(original_energy_J / 1000)} kJ", f"{format_float(renewal_energy_J / 1000)} kJ", f"{format_float((original_energy_J - renewal_energy_J) / 1000)} kJ"
         pass
 

@@ -385,9 +385,10 @@ class PcbVia():
 
         self.hole_shape = self.create_hole_shape()
     # Doing duplicate things
-    def create_hole_shape(self, board=None):
+    def create_hole_shape(self, board=None, mode=None):
         # Offsetting diameter by 0.1
-        hole_point_lst = get_arc_points(self.position, (self.drill // 2) + int(0.05 * IU_PER_MM), 0, 360)
+        radius = (self.drill // 2) + int(0.05 * IU_PER_MM) if mode == "erase" else (self.drill // 2)
+        hole_point_lst = get_arc_points(self.position, radius, 0, 360)
 
         hole_outline = pcbnew.SHAPE_LINE_CHAIN()
 
@@ -411,6 +412,9 @@ class PcbVia():
         hole_shape.SetWidth(100000)
 
         return hole_shape
+
+    def set_as_erase(self):
+        self.hole_shape = self.create_hole_shape(mode="erase")
 
     def offset(self, offset_vec):
         # print("via offsetted", self.position)
@@ -909,8 +913,11 @@ class PcbBoard():
                                                           new_net_dict=write_nets, old_net_dict=erase_nets)
 
         erase_vias, write_vias = self.compare_vias(old_board)
+        for via in erase_vias:
+            via.set_as_erase()
         print(f"vias {erase_vias}")
         self.plot_via_holes(erase_vias, self.export_board)
+        self.plot_via_holes(write_vias, self.export_board)
 
         self.plot_paths(path_dict=erase_paths, layer_dict=layer_dict, 
                             board=old_board, plot_board=self.disp_board, mode="erase")
@@ -952,6 +959,8 @@ class PcbBoard():
         print("\nOverwrite Calc\n")
 
         for layer in write_paths:
+            if layer not in new_path_dict:
+                continue
             n = new_path_dict[layer].polygonize_paths()
             e = erase_paths[layer].polygonize_paths()
             w = write_paths[layer].polygonize_paths()
