@@ -173,7 +173,8 @@
       ],
       "track_widths": [
         0.0,
-        0.2032
+        0.2032,
+        0.4064
       ],
       "via_dimensions": [
         {
@@ -442,8 +443,8 @@
       "idf": "",
       "netlist": "",
       "specctra_dsn": "",
-      "step": "",
-      "vrml": ""
+      "step": "cat_ball.step",
+      "vrml": "cat_ball.wrl"
     },
     "page_layout_descr_file": ""
   },

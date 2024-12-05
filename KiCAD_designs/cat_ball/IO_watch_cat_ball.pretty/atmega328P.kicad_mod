@@ -109,4 +109,9 @@
     (solder_mask_margin 0.102) (tstamp d1802aab-c7b2-4282-ae1a-6f635c865ba3))
   (pad "32" smd roundrect (at -2.8 -4.17) (size 0.55 1.47) (layers "F.Cu" "F.Paste" "F.Mask") (roundrect_rratio 0.125)
     (solder_mask_margin 0.102) (tstamp 3bbe9c75-06ee-4d06-82d5-bb689351e948))
+  (model "C:/Users/zyyan/Downloads/ATMEGA328P-AUR.STEP"
+    (offset (xyz 0 0 0))
+    (scale (xyz 1 1 1))
+    (rotate (xyz -90 0 0))
+  )
 )

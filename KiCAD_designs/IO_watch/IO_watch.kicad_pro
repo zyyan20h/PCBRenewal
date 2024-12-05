@@ -442,7 +442,7 @@
       "idf": "",
       "netlist": "",
       "specctra_dsn": "",
-      "step": "",
+      "step": "IO_watch.step",
       "vrml": ""
     },
     "page_layout_descr_file": ""
