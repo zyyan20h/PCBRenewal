@@ -209,7 +209,7 @@ def create_config_file():
     with open(DEFAULT_CONFIG_FILE, 'w') as con_file:
         config.write(con_file)
 
-create_config_file()
+# create_config_file()
 
 class PathParams():
     def __init__(self, board=None, path_dict=None):

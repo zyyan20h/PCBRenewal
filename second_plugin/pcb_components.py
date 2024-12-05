@@ -4,7 +4,7 @@ import math
 import os
 import pathlib
 
-from .poly_comparison import NetCollection, EdgeCollection, convert_to_mm_coords
+from .poly_comparison import NetCollection, EdgeCollection, convert_to_mm_coords, get_warnings
 
 # TODO: create a parent class calles PcbComponents, and place the common functions in it
 
@@ -493,8 +493,6 @@ class PcbBoard():
         self.export_board = None
         self.disp_board = None
 
-        self.path_dict = dict()
-
         self.add_to_dict(self.track_lst)
         self.add_to_dict(self.pad_lst)
 
@@ -509,9 +507,12 @@ class PcbBoard():
         for net in self.gnd_nets:
             self.net_dict[net.layer].append(net)
 
+        self.path_dict = self.create_path_dict()
+
         self.add_holes()
 
         self.edge = EdgeCollection(self.edge_cut_shapes, self)
+        self.edge.add_via_holes(self.via_list)
 
     def offset(self, offset):
         if offset == pcbnew.VECTOR2I(0,0):
@@ -857,6 +858,11 @@ class PcbBoard():
             path_dict[layer].export_path(board, os.path.join(self.comp_folder_path, f"{mode}_{layer}.svg"), 
                                          is_stencil=(mode=="erase"))
 
+    def get_warnings(self):
+        polgyon_dict = get_warnings(self.path_dict, self.edge, self.via_list)
+        return polgyon_dict
+        pass
+
     def compare_and_plot(self, old_board, selected_layers= None, compare_paths="component"):
         print(f"start of comparinf, method is {compare_paths}")
         erase_holes, write_holes = None, None
@@ -918,6 +924,8 @@ class PcbBoard():
         print(f"vias {erase_vias}")
         self.plot_via_holes(erase_vias, self.export_board)
         self.plot_via_holes(write_vias, self.export_board)
+        
+        self.edge.add_via_holes(erase_vias)
 
         self.plot_paths(path_dict=erase_paths, layer_dict=layer_dict, 
                             board=old_board, plot_board=self.disp_board, mode="erase")
@@ -940,6 +948,8 @@ class PcbBoard():
         erase_edges.export_edge(old_board, os.path.join(self.comp_folder_path, "erase_Edge.Cuts.svg"))
         write_edges.export_edge(self, os.path.join(self.comp_folder_path, "write_Edge.Cuts.svg"))\
         
+        self.edge.export_edge(self, os.path.join(self.comp_folder_path, "test.svg"))
+
         self.export_drill(self.export_board, self.comp_folder_path)
 
         self.export_overwrite(erase_paths, write_paths)
