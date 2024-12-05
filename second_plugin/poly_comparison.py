@@ -69,6 +69,32 @@ def convert_to_mm_coords(shape, board):
 
     return bb_width, bb_height, shape
 
+def get_warnings(path_dict, edge, via_list):
+    polygon_dict = dict()
+
+    def via_to_poly(via):
+        shape = via.hole_shape
+        points = shape.GetPolyShape().Outline(0).CPoints()
+        poly = Polygon([p for p in points])
+        return poly
+
+    for layer in path_dict:
+        polygon_dict[layer] = None
+        net_poly = path_dict[layer].combined_outlines
+        
+        for via in via_list:
+            poly = via_to_poly(via)
+            net_poly = net_poly.difference(poly)
+            pass
+
+        p = net_poly.difference(edge.edge_polygon)
+        if type(p) == Polygon:
+            p = [p]
+        else:
+            p = p.geoms
+        polygon_dict[layer] = p
+    return polygon_dict
+
 class ComponentShape:
     # Decide if component_type is necessary
     # Maybe can use isinstance
@@ -205,25 +231,25 @@ class NetCollection:
             if shape_name == "Rect":
                 width = (end[0] - start[0]) / IU_PER_MM
                 height = (end[1] - start[1]) / IU_PER_MM
-                x, y = (start - board.offset_vec - board_topleft) / IU_PER_MM
+                x, y = iu_to_mm((start - board.offset_vec - board_topleft))
                 edge_svg_text += f'<rect width=\"{width}\" height=\"{height}\" x=\"{x}\" y=\"{y}\" stroke-width=\"{0.1}\" fill="none" stroke=\"black\"/>'
             
             elif shape_name == "Circle":
-                radius = (end - start).EuclideanNorm() // IU_PER_MM
-                x, y = (start - board.offset_vec - board_topleft) / IU_PER_MM
+                radius = (end - start).EuclideanNorm() / IU_PER_MM
+                x, y = iu_to_mm((start - board.offset_vec - board_topleft))
                 edge_svg_text += f'<circle r=\"{radius}\" cx=\"{x}\" cy=\"{y}\" stroke-width=\"{0.1}\" fill="none" stroke=\"black\"/>'
             
             elif shape_name == "Arc":
                 radius = shape_ref.GetRadius() / IU_PER_MM
-                start = (start - board.offset_vec - board_topleft) / IU_PER_MM
-                end = (end - board.offset_vec - board_topleft) / IU_PER_MM
+                start = iu_to_mm((start - board.offset_vec - board_topleft)) 
+                end = iu_to_mm((end - board.offset_vec - board_topleft))
                 angle = shape_ref.GetArcAngle().AsDegrees()
                 large_arc_factor = 1 if angle > 180 else 0
                 edge_svg_text += f'<path d=\"M {start[0]} {start[1]} A {radius} {radius} 0 {large_arc_factor} 1 {end[0]} {end[1]}\" stroke-width=\"{0.1}\" fill="none" stroke=\"black\"/>'
 
             elif shape_name == "Line":
-                start = (start - board.offset_vec - board_topleft) / IU_PER_MM
-                end = (end - board.offset_vec - board_topleft) / IU_PER_MM
+                start = iu_to_mm((start - board.offset_vec - board_topleft))
+                end = iu_to_mm((end - board.offset_vec - board_topleft))
                 edge_svg_text += f'<line x1=\"{start[0]}\" y1=\"{start[1]}\" x2=\"{end[0]}\" y2=\"{end[1]}\" stroke-width=\"{0.1}\" fill="none" stroke=\"black\"/>'
             pass
 
@@ -320,7 +346,7 @@ class EdgeCollection:
                 p = p.exterior.buffer(width)
                 polygons.append(p)
 
-            elif name == "Cicle":
+            elif name == "Circle":
                 radius = (start - end).EuclideanNorm()
                 center = Point(start)
                 p = center.buffer(radius)
@@ -340,9 +366,10 @@ class EdgeCollection:
         combined =  union_all(polygons)
         polygons = []
         if type(combined) == Polygon:
+            print("combined is a polygon")
             polygons = [Polygon(ls) for ls in combined.interiors]
         else:
-            for p in combined.geoms():
+            for p in combined.geoms:
                 polygons += [Polygon(ls) for ls in p.interiors]
         
         polygons.sort(key=lambda x: x.area, reverse=True)

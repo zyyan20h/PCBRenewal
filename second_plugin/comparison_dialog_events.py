@@ -12,6 +12,7 @@ ALIGN_CORNER_CHOICES = ["Top Left", "Top Right", "Bottom Right", "Bottom Left"]
 
 ERASE_NAME = "Stuff to be Erased"
 WRITE_NAME = "Stuff to be Written"
+WARNING_NAME = "Warnings"
 
 class BoardComparisonWindow(ComparisonOptionsDialog):
 
@@ -304,6 +305,9 @@ class BoardComparisonWindow(ComparisonOptionsDialog):
         self.board_vis.PlotBoard(self.new_board, WRITE_NAME, path_dict=write_paths, 
                                  parent_board_name="New Board", edge_cut_poly=erase_edges, layer_prefix="engraving")
         
+        self.board_vis.PlotPolygons(name=WARNING_NAME, parent_board_name="New Board", 
+                                    polygon_dict=self.new_board.get_warnings(), layer_prefix="warnings")
+
         self.RunAnalysis(erase_paths=erase_paths, write_paths=write_paths, erase_edges=erase_edges)
         self.Layout()
         
@@ -342,9 +346,10 @@ BACKGROUND_COLOR = "#000020"
 BOARD_COLORS = {"Old Board":{"F.Cu":"#DD1010", "B.Cu":"#2f2fad", "Edge.Cuts":"#DDDDDD"},
                 "New Board":{"F.Cu":"#fa377b", "B.Cu":"#52b8f2", "Edge.Cuts":"#DDDDDD"},
                 ERASE_NAME:{"F.Cu":"#eb4a05", "B.Cu":"#0a8008", "Edge.Cuts":"#DDDDDD"},
-                WRITE_NAME:{"F.Cu":"#ffc021", "B.Cu":"#0bd439", "Edge.Cuts":"#69d466"}}
+                WRITE_NAME:{"F.Cu":"#ffc021", "B.Cu":"#0bd439", "Edge.Cuts":"#69d466"},
+                WARNING_NAME:{"F.Cu":"#ff9d80", "B.Cu":"#f080ff"}}
 
-board_disp_order = ["New Board", "Old Board", WRITE_NAME, ERASE_NAME]
+board_disp_order = [WARNING_NAME, "New Board", "Old Board", WRITE_NAME, ERASE_NAME]
 layer_disp_order = ["F.Cu", "B.Cu", "Edge.Cuts"]
 
 class BoardVisPanel(wx.Panel):
@@ -505,6 +510,32 @@ class BoardVisPanel(wx.Panel):
 
         self.canvas.ZoomToBB()
         
+    def PlotPolygons(self, name, parent_board_name, polygon_dict, layer_prefix):
+        if name in self.boards:
+            self.RemoveBoard(board_name=name)
+            self.boards.pop(name, None) # Is probably redundant
+        
+        self.board_properties[name] = dict()
+        self.boards[name] = dict()
+        
+        for layer in polygon_dict:
+            self.boards[name][layer] = []
+            polygons = polygon_dict[layer]
+            for poly in polygons:
+                point_lst = poly.exterior.coords
+                if len(point_lst) == 0:
+                    break
+                shape = self.canvas.AddPolygon(point_lst, LineStyle="Transparent", 
+                                                    FillStyle="Solid", FillColor=BOARD_COLORS[name][layer])
+                self.boards[name][layer].append(shape)
+            pass
+
+        self.AddBoardLayerControls(name, parent_board_name, layer_prefix=layer_prefix)
+        self.SetDisplayOrder()
+        self.canvas.ZoomToBB()
+        self.canvas.Draw(True)
+
+        self.canvas.ZoomToBB()
 
     def RemoveBoard(self, board_name):
         # if board_name in 
