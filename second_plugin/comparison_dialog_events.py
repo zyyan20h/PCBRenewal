@@ -342,6 +342,7 @@ import numpy as N
 def YDownProjection(CenterPoint):
     return N.array((1,-1))
 
+
 BACKGROUND_COLOR = "#000020"
 BOARD_COLORS = {"Old Board":{"F.Cu":"#DD1010", "B.Cu":"#2f2fad", "Edge.Cuts":"#DDDDDD"},
                 "New Board":{"F.Cu":"#fa377b", "B.Cu":"#52b8f2", "Edge.Cuts":"#DDDDDD"},
