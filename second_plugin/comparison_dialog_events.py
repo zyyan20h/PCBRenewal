@@ -306,7 +306,7 @@ class BoardComparisonWindow(ComparisonOptionsDialog):
                                  parent_board_name="New Board", edge_cut_poly=erase_edges, layer_prefix="engraving")
         
         self.board_vis.PlotPolygons(name=WARNING_NAME, parent_board_name="New Board", 
-                                    polygon_dict=self.new_board.get_warnings(), layer_prefix="warnings")
+                                    polygon_dict=self.new_board.get_warnings(self.old_board), layer_prefix="warnings")
 
         self.RunAnalysis(erase_paths=erase_paths, write_paths=write_paths, erase_edges=erase_edges)
         self.Layout()
@@ -345,9 +345,9 @@ def YDownProjection(CenterPoint):
 BACKGROUND_COLOR = "#000020"
 BOARD_COLORS = {"Old Board":{"F.Cu":"#DD1010", "B.Cu":"#2f2fad", "Edge.Cuts":"#DDDDDD"},
                 "New Board":{"F.Cu":"#fa377b", "B.Cu":"#52b8f2", "Edge.Cuts":"#DDDDDD"},
-                ERASE_NAME:{"F.Cu":"#eb4a05", "B.Cu":"#0a8008", "Edge.Cuts":"#DDDDDD"},
-                WRITE_NAME:{"F.Cu":"#ffc021", "B.Cu":"#0bd439", "Edge.Cuts":"#69d466"},
-                WARNING_NAME:{"F.Cu":"#ff9d80", "B.Cu":"#f080ff"}}
+                ERASE_NAME:{"F.Cu":"#eb4a05", "B.Cu":"#ab4624", "Edge.Cuts":"#DDDDDD"},
+                WRITE_NAME:{"F.Cu":"#0a8008", "B.Cu":"#0c3d0b", "Edge.Cuts":"#BBBBBB"},
+                WARNING_NAME:{"F.Cu":"#ffff12", "B.Cu":"#ffff12"}}
 
 board_disp_order = [WARNING_NAME, "New Board", "Old Board", WRITE_NAME, ERASE_NAME]
 layer_disp_order = ["F.Cu", "B.Cu", "Edge.Cuts"]

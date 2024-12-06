@@ -852,14 +852,21 @@ class PcbBoard():
 
         return new_board
 
-    def plot_paths(self, path_dict, layer_dict, board, plot_board, mode):
+    def plot_paths(self, path_dict, layer_dict, board, plot_board, mode, subtract_path_dict=None):
         for layer in path_dict:
-            path_dict[layer].plot_in_kicad(plot_board, layer_dict[mode][layer])
-            path_dict[layer].export_path(board, os.path.join(self.comp_folder_path, f"{mode}_{layer}.svg"), 
-                                         is_stencil=(mode=="erase"))
 
-    def get_warnings(self):
-        polgyon_dict = get_warnings(self.path_dict, self.edge, self.via_list)
+            path = path_dict[layer]
+
+            path.plot_in_kicad(plot_board, layer_dict[mode][layer])
+            
+            if subtract_path_dict and layer in subtract_path_dict:
+                path = path_dict[layer].path_difference(subtract_path_dict[layer])
+
+            path.export_path(board, os.path.join(self.comp_folder_path, f"{mode}_{layer}.svg"),
+                             is_stencil=(mode=="erase"))
+
+    def get_warnings(self, old_board):
+        polgyon_dict = get_warnings(self.path_dict, self.edge, old_board.edge, self.via_list)
         return polgyon_dict
         pass
 

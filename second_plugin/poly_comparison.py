@@ -69,7 +69,7 @@ def convert_to_mm_coords(shape, board):
 
     return bb_width, bb_height, shape
 
-def get_warnings(path_dict, edge, via_list):
+def get_warnings(path_dict, new_edge, old_edge, via_list):
     polygon_dict = dict()
 
     def via_to_poly(via):
@@ -87,7 +87,9 @@ def get_warnings(path_dict, edge, via_list):
             net_poly = net_poly.difference(poly)
             pass
 
-        p = net_poly.difference(edge.edge_polygon)
+        p1 = net_poly.difference(new_edge.edge_polygon)
+        p2 = net_poly.difference(old_edge.edge_polygon)
+        p = p1.union(p2)
         if type(p) == Polygon:
             p = [p]
         else:
