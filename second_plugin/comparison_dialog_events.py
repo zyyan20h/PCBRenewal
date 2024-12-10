@@ -98,7 +98,8 @@ class BoardComparisonWindow(ComparisonOptionsDialog):
         
         
         self.Layout()
-        self.PanelLog.ScrollPages(1)
+        self.PanelLog.ScrollLines(6)
+        
 
     def OpenFileDialog(self):
         ofd = wx.FileDialog(parent=None, message="Select Board File", \
@@ -305,8 +306,12 @@ class BoardComparisonWindow(ComparisonOptionsDialog):
         self.board_vis.PlotBoard(self.new_board, WRITE_NAME, path_dict=write_paths, 
                                  parent_board_name="New Board", edge_cut_poly=erase_edges, layer_prefix="engraving")
         
-        self.board_vis.PlotPolygons(name=WARNING_NAME, parent_board_name="New Board", 
-                                    polygon_dict=self.new_board.get_warnings(self.old_board), layer_prefix="warnings")
+        warnings = self.new_board.get_warnings(self.old_board)
+
+        if warnings:
+            self.AddToLog("Your nets and holes may be overlapping. Please refer to warnings")
+            self.board_vis.PlotPolygons(name=WARNING_NAME, parent_board_name="New Board", 
+                                        polygon_dict=warnings, layer_prefix="warnings")
 
         self.RunAnalysis(erase_paths=erase_paths, write_paths=write_paths, erase_edges=erase_edges)
         self.Layout()

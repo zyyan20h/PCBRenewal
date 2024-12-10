@@ -71,7 +71,7 @@ def convert_to_mm_coords(shape, board):
 
 def get_warnings(path_dict, new_edge, old_edge, via_list):
     polygon_dict = dict()
-
+    no_warnings = True
     def via_to_poly(via):
         shape = via.hole_shape
         points = shape.GetPolyShape().Outline(0).CPoints()
@@ -90,11 +90,20 @@ def get_warnings(path_dict, new_edge, old_edge, via_list):
         p1 = net_poly.difference(new_edge.edge_polygon)
         p2 = net_poly.difference(old_edge.edge_polygon)
         p = p1.union(p2)
+
+        if not p.is_empty:
+            no_warnings = False
+
         if type(p) == Polygon:
             p = [p]
         else:
             p = p.geoms
         polygon_dict[layer] = p
+
+
+    if no_warnings:
+        polygon_dict = None
+
     return polygon_dict
 
 class ComponentShape:
