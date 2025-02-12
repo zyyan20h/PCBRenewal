@@ -1,5 +1,5 @@
 # PCB Renewal
-A method for reusing and reconfiguring circuit boards across design interations. This is an accompanying repository of a research paper published in ACM CHI 2025: https://doi.org/10.1145/3706598.3714276
+PCB Renewal is a sustainable fabrication technique that enables renewal and reconfiguration of obsolete PCBs. This is an accompanying repository of a [research paper](https://doi.org/10.1145/3706598.3714276) published in ACM CHI 2025.
 
 ![teaser](https://github.com/user-attachments/assets/58f8236a-d523-42a7-9e07-9fa38232be9e)
 
