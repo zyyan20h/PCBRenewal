@@ -1,16 +1,10 @@
 # PCB Renewal
-A method for reusing and refactoring circuit boards across design interations.
+A method for reusing and reconfiguring circuit boards across design interations. This is an accompanying repository of a research paper published in ACM CHI 2025: https://doi.org/10.1145/3706598.3714276
 
 ![teaser](https://github.com/user-attachments/assets/58f8236a-d523-42a7-9e07-9fa38232be9e)
 
-## Examples
-Various circuit board designs that were used and refactored into other designs, e.g turning a PCB for a watch into one for a cat toy.
-
-## Archive
-Arudino code and old examples used during the project
-
-## renewal_plugin
-A plugin for circuit design software, KiCad, that facilitates this refactoring. It can be used to compare two circuit designs, crosschecking the traces and pads to figure out an efficient way to remove certaing traces to transform one circuit into another.
+## KiCad Plugin
+A plugin for the circuit design software, KiCad, that facilitates this reconfiguring. It can be used to compare two circuit designs, crosschecking the traces and pads to figure out an efficient way to remove certain traces to transform one circuit into another.
 
 ### Installation
 
@@ -52,3 +46,9 @@ One other thing you can try is using the **Python Scripting Console**
 * numpy: 1.26.1
 * shapely: 2.0.4
 * wxPython: 4.2.1
+
+## Examples
+Various circuit board designs that were used and reconfigured into other designs, e.g turning a PCB for a watch into one for a cat toy.
+
+## Archive
+Arudino code and old examples used during the project.
