@@ -4,7 +4,7 @@ PCB Renewal is a sustainable fabrication technique that enables renewal and reco
 ![teaser](https://github.com/user-attachments/assets/58f8236a-d523-42a7-9e07-9fa38232be9e)
 
 ## KiCad Plugin
-A plugin for the circuit design software, KiCad, that facilitates this reconfiguring. It can be used to compare two circuit designs, crosschecking the traces and pads to figure out an efficient way to remove certain traces to transform one circuit into another.
+A plugin for the circuit design software, KiCad, that facilitates this reconfiguring process. It can be used to compare two circuit designs, crosschecking the traces and pads to figure out an efficient way to remove certain traces to transform one circuit into another.
 
 ### Installation
 
@@ -51,4 +51,4 @@ One other thing you can try is using the **Python Scripting Console**
 Various circuit board designs that were used and reconfigured into other designs, e.g turning a PCB for a watch into one for a cat toy.
 
 ## Archive
-Arudino code and old examples used during the project.
+Arudino code and old examples used during the project development.
